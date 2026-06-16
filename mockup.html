@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OmniUI Fabric — Platform Studio</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:#475569;border-radius:3px}
+::-webkit-scrollbar-track{background:transparent}
+.nav-item{display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:7px;font-size:13px;color:#94a3b8;cursor:pointer;transition:all .12s;user-select:none}
+.nav-item:hover{background:#1e293b;color:#e2e8f0}
+.nav-item.active{background:#4f46e5;color:#fff}
+.nav-section{font-size:10px;font-weight:700;letter-spacing:.08em;color:#475569;padding:14px 10px 4px;text-transform:uppercase}
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-stable{background:#dcfce7;color:#15803d}
+.badge-staging{background:#fef9c3;color:#a16207}
+.badge-draft{background:#f1f5f9;color:#64748b}
+.badge-deprecated{background:#fee2e2;color:#b91c1c}
+.badge-archived{background:#f3f4f6;color:#6b7280}
+.pill{display:inline-flex;align-items:center;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;margin:1px}
+.pill-web{background:#dbeafe;color:#1d4ed8}
+.pill-chatbot{background:#fae8ff;color:#7e22ce}
+.pill-copilot{background:#dcfce7;color:#15803d}
+.pill-mobile{background:#fff7ed;color:#c2410c}
+.pill-portal{background:#f1f5f9;color:#475569}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px}
+.metric-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:20px}
+.btn-primary{background:#4f46e5;color:#fff;border:none;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:#4338ca}
+.btn-secondary{background:#fff;color:#374151;border:1px solid #d1d5db;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.btn-secondary:hover{background:#f9fafb;border-color:#9ca3af}
+.tab{padding:7px 14px;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;color:#64748b;border:1px solid transparent;transition:all .12s}
+.tab.active{background:#4f46e5;color:#fff}
+.tab:not(.active):hover{background:#f1f5f9;color:#374151}
+.code{font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:12px;line-height:1.7}
+.code-block{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:16px;font-family:'SF Mono','Fira Code',Consolas,monospace;font-size:12px;line-height:1.7;overflow:auto}
+.json-key{color:#93c5fd}
+.json-str{color:#86efac}
+.json-num{color:#fde68a}
+.json-bool{color:#f9a8d4}
+.json-null{color:#9ca3af}
+.render-slot{margin-bottom:14px}
+.render-slot label{display:block;font-size:13px;font-weight:500;color:#374151;margin-bottom:5px}
+.render-slot input,.render-slot select{width:100%;border:1px solid #d1d5db;border-radius:7px;padding:8px 12px;font-size:14px;outline:none;background:#fff;transition:border-color .15s}
+.render-slot input:focus,.render-slot select:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.render-slot input[type=range]{padding:0;border:none;box-shadow:none;accent-color:#4f46e5}
+.channel-frame{background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden}
+.channel-frame-header{padding:10px 14px;border-bottom:1px solid #e2e8f0;font-size:12px;font-weight:600;color:#64748b;display:flex;align-items:center;gap:6px;background:#fff}
+.chat-bubble{border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.6;margin-bottom:10px}
+.chat-ai{background:#f0f4ff;border:1px solid #c7d2fe;color:#1e1b4b}
+.chat-user{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d;margin-left:24px}
+.skill-row{padding:14px 20px;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .1s;display:grid;grid-template-columns:2fr 1.2fr .8fr 1fr 1.4fr .6fr;align-items:center;gap:12px}
+.skill-row:hover{background:#f8fafc}
+.rule-row{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;border:1px solid #e2e8f0;margin-bottom:6px;font-size:12px}
+.rule-row.matched{border-color:#6366f1;background:#f0f4ff}
+.rule-row.matched .rule-id{background:#6366f1;color:#fff}
+.rule-id{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:#f1f5f9;color:#475569;white-space:nowrap;font-family:monospace}
+.toast-el{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:12px 18px;border-radius:9px;font-size:13px;z-index:9999;transform:translateY(10px);opacity:0;transition:all .25s;pointer-events:none;max-width:320px}
+.toast-el.show{opacity:1;transform:translateY(0)}
+input[type=range]{-webkit-appearance:none;height:6px;border-radius:3px;background:#e2e8f0;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#4f46e5;cursor:pointer}
+textarea{width:100%;border:1px solid #d1d5db;border-radius:7px;padding:10px 12px;font-size:13px;outline:none;resize:none;font-family:inherit}
+textarea:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.12)}
+.a2ui-metric{background:linear-gradient(135deg,#eef2ff,#e0e7ff);border:1px solid #c7d2fe;border-radius:10px;padding:14px}
+.signal-row td{padding:9px 12px;font-size:12px;border-bottom:1px solid #f1f5f9}
+.bar-chart-bar{border-radius:4px 4px 0 0;transition:height .4s ease;background:#6366f1}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:16px;padding-right:34px}
+</style>
+</head>
+<body class="bg-slate-50 overflow-hidden" style="height:100vh">
+
+<div class="flex h-screen overflow-hidden">
+
+  <!-- SIDEBAR -->
+  <aside class="flex flex-col flex-shrink-0 overflow-hidden" style="width:220px;background:#0f172a">
+    <!-- Logo -->
+    <div class="px-4 py-4" style="border-bottom:1px solid #1e293b">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center justify-center rounded-lg font-bold text-white text-sm" style="width:32px;height:32px;background:linear-gradient(135deg,#6366f1,#8b5cf6)">F</div>
+        <div>
+          <div class="text-white font-semibold text-sm">OmniUI Fabric</div>
+          <div class="text-xs" style="color:#64748b">Platform Studio</div>
+        </div>
+      </div>
+    </div>
+    <!-- Org -->
+    <div class="px-3 py-3" style="border-bottom:1px solid #1e293b">
+      <div class="flex items-center gap-2 px-2 py-2 rounded-lg" style="background:#1e293b">
+        <div class="rounded text-white font-bold text-xs flex items-center justify-center flex-shrink-0" style="width:24px;height:24px;background:#4f46e5">A</div>
+        <div class="min-w-0">
+          <div class="text-white text-xs font-semibold truncate">Acme Bank</div>
+          <div class="text-xs" style="color:#475569">Enterprise · PCI</div>
+        </div>
+        <div class="ml-auto w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></div>
+      </div>
+    </div>
+    <!-- Nav -->
+    <nav class="flex-1 overflow-y-auto px-3 py-3">
+      <div class="nav-section">Platform</div>
+      <div class="nav-item active" data-action="nav" data-view="dashboard">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-section">Registry</div>
+      <div class="nav-item" data-action="nav" data-view="skills">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        Skills
+      </div>
+      <div class="nav-item" data-action="nav" data-view="xd-registry">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        XD Registry
+      </div>
+      <div class="nav-section">Authoring</div>
+      <div class="nav-item" data-action="nav" data-view="studio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 110 20 10 10 0 010-20z"/><path d="M12 6v6l4 2"/></svg>
+        AI Studio
+      </div>
+      <div class="nav-item" data-action="nav" data-view="preview">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h5l2 3-2 3h-5"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Preview Bench
+      </div>
+      <div class="nav-section">Platform</div>
+      <div class="nav-item" data-action="nav" data-view="mcp">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        MCP Gateway
+      </div>
+      <div class="nav-item" data-action="nav" data-view="analytics">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </div>
+    </nav>
+    <!-- User -->
+    <div class="px-3 py-3" style="border-top:1px solid #1e293b">
+      <div class="flex items-center gap-2 px-2">
+        <div class="rounded-full flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style="width:28px;height:28px;background:#6366f1">T</div>
+        <div class="min-w-0">
+          <div class="text-white text-xs font-medium">Taylor H.</div>
+          <div class="text-xs" style="color:#475569">Author · lending-squad</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- Top bar -->
+    <header class="flex-shrink-0 bg-white flex items-center px-6 gap-4" style="height:52px;border-bottom:1px solid #e2e8f0">
+      <div id="page-title" class="font-semibold text-slate-800 text-sm">Dashboard</div>
+      <div class="flex-1"></div>
+      <div class="flex items-center gap-2 text-xs" style="color:#64748b">
+        <span class="w-2 h-2 rounded-full bg-green-400 inline-block"></span>
+        Runtime · Online
+      </div>
+      <div class="text-xs border rounded px-2 py-1 code" style="border-color:#e2e8f0;color:#64748b">org: acme-bank</div>
+      <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:#4f46e5">T</div>
+    </header>
+    <!-- Content -->
+    <main id="content" class="flex-1 overflow-auto"></main>
+  </div>
+</div>
+
+<div id="toast" class="toast-el"></div>
+
+<script>
+// ============================================================
+// MOCK DATA
+// ============================================================
+const MOCK = {
+  org: { org_id:'acme-bank', name:'Acme Bank', plan:'enterprise', compliance_level:'pci' },
+
+  skills: [
+    { skill_id:'apply-for-loan', name:'Apply for Loan', domain:'financial-services', category:'transaction', version:'2.1.0', status:'stable', description:'Enables customers to apply for personal or business loans with real-time eligibility checking.', compliance_tags:['PCI-DSS','GDPR'], auth_required:true, is_composite:false, channels:['web','chatbot','copilot'], owner_team:'lending-squad', created_at:'2024-01-15', estimated_tokens_ui:0, estimated_tokens_fallback:520 },
+    { skill_id:'verify-identity', name:'Verify Identity', domain:'financial-services', category:'onboarding', version:'1.0.3', status:'stable', description:'KYC identity verification — collects and validates government-issued ID and selfie biometric.', compliance_tags:['GDPR','PII_handling'], auth_required:false, is_composite:false, channels:['web','mobile'], owner_team:'platform-squad', created_at:'2024-01-20', estimated_tokens_ui:0, estimated_tokens_fallback:480 },
+    { skill_id:'check-application-status', name:'Check Application Status', domain:'financial-services', category:'lookup', version:'1.2.0', status:'stable', description:'Query the status of an existing loan application by reference number.', compliance_tags:[], auth_required:true, is_composite:false, channels:['web','chatbot','copilot','portal'], owner_team:'lending-squad', created_at:'2024-02-01', estimated_tokens_ui:0, estimated_tokens_fallback:320 },
+    { skill_id:'escalate-to-human', name:'Escalate to Human', domain:'financial-services', category:'support', version:'1.0.1', status:'stable', description:'Connect customer to a human advisor — passes full session context automatically.', compliance_tags:[], auth_required:false, is_composite:false, channels:['chatbot','copilot'], owner_team:'cx-squad', created_at:'2024-02-15', estimated_tokens_ui:0, estimated_tokens_fallback:180 },
+    { skill_id:'loan-onboarding-flow', name:'Loan Onboarding Flow', domain:'financial-services', category:'onboarding', version:'1.0.0', status:'staging', description:'Composite: verify-identity → apply-for-loan → confirmation.', compliance_tags:['PCI-DSS','GDPR'], auth_required:true, is_composite:true, channels:['web'], owner_team:'lending-squad', created_at:'2024-03-10', estimated_tokens_ui:0, estimated_tokens_fallback:0 },
+    { skill_id:'open-account', name:'Open Account', domain:'financial-services', category:'onboarding', version:'0.9.2', status:'draft', description:'New current account opening flow for retail banking. PII-heavy, GDPR-scoped.', compliance_tags:['GDPR','PII_handling'], auth_required:false, is_composite:false, channels:['web'], owner_team:'retail-squad', created_at:'2024-03-20', estimated_tokens_ui:0, estimated_tokens_fallback:600 }
+  ],
+
+  xds: [
+    {
+      xd_id:'loan-application-web',
+      name:'Loan Application — Web',
+      implements_skill:'apply-for-loan',
+      version:'3.0.0',
+      status:'stable',
+      channels:['web','portal'],
+      template_id:'sys:single-step-form',
+      owner_team:'lending-squad',
+      slots:[
+        { id:'loan-type',         type:'select',        label:'Loan Type',                  bind:'$.loanType',         required:true,  visible_if:'true',   options:['Personal','Business','Home Improvement','Vehicle'] },
+        { id:'loan-amount',       type:'currency-input', label:'Loan Amount',                bind:'$.loanAmount',       required:true,  visible_if:'true',   validation:{min:1000,max:1000000} },
+        { id:'loan-term',         type:'range-slider',  label:'Loan Term (months)',          bind:'$.loanTerm',         required:true,  visible_if:'true',   validation:{min:12,max:84} },
+        { id:'monthly-payment',   type:'metric-display',label:'Est. Monthly Payment',       compute:'PMT(0.05/12,loanTerm,loanAmount)', visible_if:'true' },
+        { id:'employment-status', type:'select',        label:'Employment Status',           bind:'$.employmentStatus', required:true,  visible_if:'true',   options:['Employed','Self-employed','Retired','Unemployed'] },
+        { id:'annual-income',     type:'currency-input', label:'Annual Income',             bind:'$.annualIncome',     required:true,  visible_if:'true' },
+        { id:'consent',           type:'checkbox',      label:'I consent to a soft credit check', bind:'$.consent',  required:true,  visible_if:'true' },
+        { id:'submit',            type:'button',        label:'Submit Application',          visible_if:'true',   variant:'primary' }
+      ],
+      rules:[
+        { id:'chatbot-compact',  condition:"channel=='chatbot'",        priority:4, description:'Chatbot: hide computed & income fields', patch:{ hide:['monthly-payment','employment-status','annual-income','consent'] }},
+        { id:'copilot-minimal',  condition:"channel=='copilot'",        priority:4, description:'Copilot: minimal card layout',           patch:{ hide:['monthly-payment','loan-term','annual-income','consent'] }},
+        { id:'premium-user',     condition:"user_tier=='premium'",      priority:2, description:'Premium customers: extend loan cap',     patch:{ maxAmount:5000000 }},
+        { id:'locale-uk',        condition:"locale=='en-GB'",           priority:1, description:'UK locale: switch to GBP currency',      patch:{ currency:'GBP' }},
+        { id:'mobile-compact',   condition:"device_width<500",          priority:1, description:'Narrow screen: hide term slider',        patch:{ hide:['loan-term'] }}
+      ],
+      actions:[{ action_id:'submit', label:'Submit Application', webhook_url:'/api/webhooks/loan-apply' }]
+    },
+    {
+      xd_id:'status-card-web',
+      name:'Application Status Card',
+      implements_skill:'check-application-status',
+      version:'1.2.0',
+      status:'stable',
+      channels:['web','chatbot','copilot','portal'],
+      template_id:'sys:metric-card',
+      owner_team:'lending-squad',
+      slots:[
+        { id:'ref-number',     type:'text-input',    label:'Application Reference', bind:'$.refNumber', required:true, visible_if:'true' },
+        { id:'status-display', type:'metric-display',label:'Application Status',    compute:"LOOKUP('statuses',refNumber)", visible_if:'true' },
+        { id:'check',          type:'button',        label:'Check Status',          visible_if:'true',  variant:'primary' }
+      ],
+      rules:[
+        { id:'chatbot-compact', condition:"channel=='chatbot'", priority:4, description:'Chatbot: compact layout', patch:{ hide:[] }}
+      ],
+      actions:[{ action_id:'check', label:'Check Status', webhook_url:'/api/webhooks/loan-status' }]
+    },
+    {
+      xd_id:'escalate-card',
+      name:'Escalate to Human Card',
+      implements_skill:'escalate-to-human',
+      version:'1.0.1',
+      status:'stable',
+      channels:['chatbot','copilot'],
+      template_id:'sys:confirmation',
+      owner_team:'cx-squad',
+      slots:[
+        { id:'message', type:'text-display', label:'Connecting you to an advisor. Estimated wait: 3 minutes.', visible_if:'true' },
+        { id:'confirm', type:'button', label:'Connect Now',            visible_if:'true', variant:'primary' },
+        { id:'cancel',  type:'button', label:'Continue Self-Service',  visible_if:'true', variant:'secondary' }
+      ],
+      rules:[],
+      actions:[
+        { action_id:'confirm', label:'Connect to advisor',   webhook_url:'/api/webhooks/escalate' },
+        { action_id:'cancel',  label:'Cancel escalation',    webhook_url:'/api/webhooks/cancel-escalate' }
+      ]
+    }
+  ],
+
+  templates:[
+    { template_id:'sys:single-step-form', name:'Single-Step Form',  channels:['web','mobile','chatbot','copilot','portal'] },
+    { template_id:'sys:multi-step-form',  name:'Multi-Step Form',   channels:['web','mobile'] },
+    { template_id:'sys:calculator',       name:'Calculator',        channels:['web','portal'] },
+    { template_id:'sys:metric-card',      name:'Metric Card',       channels:['web','mobile','chatbot','copilot'] },
+    { template_id:'sys:confirmation',     name:'Confirmation',      channels:['web','mobile','chatbot','copilot'] }
+  ],
+
+  agents:[
+    { agent_id:'lending-agent-v2', name:'Lending Assistant v2', agent_type:'claude', status:'active', channels:['web','chatbot'], capabilities:['apply-for-loan','check-application-status','escalate-to-human'], tokens_saved: 8400 },
+    { agent_id:'onboarding-copilot', name:'Onboarding Copilot', agent_type:'copilot', status:'active', channels:['copilot'], capabilities:['verify-identity','open-account'], tokens_saved: 6200 }
+  ],
+
+  recentSignals:[
+    { ts:'12:43:22', skill:'apply-for-loan',            channel:'chatbot', ms:3.2,  cache:true,  tokens:0, rules:['chatbot-compact'] },
+    { ts:'12:43:19', skill:'check-application-status', channel:'web',     ms:6.8,  cache:false, tokens:0, rules:[] },
+    { ts:'12:43:15', skill:'apply-for-loan',            channel:'web',     ms:0.8,  cache:true,  tokens:0, rules:['locale-uk'] },
+    { ts:'12:43:09', skill:'escalate-to-human',         channel:'copilot', ms:2.1,  cache:true,  tokens:0, rules:[] },
+    { ts:'12:43:02', skill:'apply-for-loan',            channel:'chatbot', ms:4.4,  cache:false, tokens:0, rules:['chatbot-compact','premium-user'] },
+    { ts:'12:42:58', skill:'verify-identity',           channel:'web',     ms:7.2,  cache:false, tokens:0, rules:[] },
+    { ts:'12:42:44', skill:'apply-for-loan',            channel:'copilot', ms:0.9,  cache:true,  tokens:0, rules:['copilot-minimal'] },
+    { ts:'12:42:31', skill:'check-application-status', channel:'chatbot', ms:1.2,  cache:true,  tokens:0, rules:['chatbot-compact'] }
+  ]
+};
+
+// ============================================================
+// APP STATE
+// ============================================================
+const S = {
+  view: 'dashboard',
+  params: {},
+  // Preview
+  previewXD: 'loan-application-web',
+  previewChannel: 'web',
+  previewTier: 'standard',
+  previewLocale: 'en-US',
+  previewDeviceWidth: 1200,
+  // Studio chat
+  chatHistory: [],
+  chatPhase: 0,
+  generatedManifest: null,
+  // MCP
+  mcpTool: 'find_skill',
+  mcpResponse: null,
+  // Skills filter
+  skillSearch: '',
+  skillFilter: 'all'
+};
+
+// ============================================================
+// RUNTIME ENGINE
+// ============================================================
+function evalCondition(cond, ctx) {
+  try {
+    const expr = cond
+      .replace(/channel/g, JSON.stringify(ctx.channel))
+      .replace(/user_tier/g, JSON.stringify(ctx.user_tier))
+      .replace(/locale/g, JSON.stringify(ctx.locale))
+      .replace(/device_width/g, String(ctx.device_width));
+    return !!Function('return (' + expr + ')')();
+  } catch(e) { return false; }
+}
+
+function computeVal(expr, ctx) {
+  if (!expr) return null;
+  if (expr.startsWith('PMT(')) {
+    const pv  = ctx.data && ctx.data.loanAmount ? ctx.data.loanAmount : 25000;
+    const n   = ctx.data && ctx.data.loanTerm   ? ctx.data.loanTerm   : 36;
+    const r   = 0.05 / 12;
+    const pmt = pv * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1);
+    return (ctx.currency==='GBP'?'£':'$') + pmt.toFixed(2) + '/mo';
+  }
+  if (expr.includes('LOOKUP')) return '🟡 Under Review';
+  if (expr.includes('CONCAT')) return 'Connecting you to an advisor. Estimated wait: 3 minutes.';
+  return null;
+}
+
+function runRuntime(xdId, ctx) {
+  const xd = MOCK.xds.find(x => x.xd_id === xdId);
+  if (!xd) return null;
+
+  const matchedRules = [];
+  const hidden = new Set();
+  let currency = 'USD';
+
+  for (const rule of [...xd.rules].sort((a,b)=>a.priority-b.priority)) {
+    if (evalCondition(rule.condition, ctx)) {
+      matchedRules.push(rule.id);
+      if (rule.patch.hide) rule.patch.hide.forEach(id => hidden.add(id));
+      if (rule.patch.currency) currency = rule.patch.currency;
+    }
+  }
+
+  const cacheHit = Math.random() > 0.4;
+  const ms = cacheHit ? (Math.random()*0.7+0.1).toFixed(1) : (Math.random()*6+2).toFixed(1);
+
+  const resolvedSlots = xd.slots
+    .filter(s => !hidden.has(s.id))
+    .map(s => ({ ...s, currency, computedValue: computeVal(s.compute, { ...ctx, currency }) }));
+
+  return {
+    xd_id: xd.xd_id, xd_version: xd.version, skill_id: xd.implements_skill,
+    org_id: 'acme-bank', a2ui_version: '0.8',
+    session_id: 'sess_' + Math.random().toString(36).slice(2,9),
+    slots: resolvedSlots, rules_applied: matchedRules,
+    render_ms: parseFloat(ms), tokens_used: 0, cache_hit: cacheHit,
+    bundle_size_bytes: 2048 + Math.floor(Math.random()*512)
+  };
+}
+
+// ============================================================
+// SLOT → HTML RENDERER
+// ============================================================
+function slotHTML(slot) {
+  const curr = slot.currency === 'GBP' ? '£' : '$';
+  const req = slot.required ? '<span style="color:#ef4444">*</span>' : '';
+
+  switch(slot.type) {
+    case 'text-input':
+      return `<div class="render-slot"><label>${slot.label} ${req}</label><input type="text" placeholder="Enter ${slot.label.toLowerCase()}…" /></div>`;
+
+    case 'currency-input':
+      return `<div class="render-slot"><label>${slot.label} ${req}</label><div style="position:relative"><span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#6b7280;font-size:13px">${curr}</span><input type="number" style="padding-left:24px" placeholder="0.00" /></div></div>`;
+
+    case 'select':
+      const opts = (slot.options||['Option A','Option B']).map(o=>`<option>${o}</option>`).join('');
+      return `<div class="render-slot"><label>${slot.label} ${req}</label><select><option value="">Select…</option>${opts}</select></div>`;
+
+    case 'range-slider':
+      const mn=slot.validation?.min||12, mx=slot.validation?.max||84, mid=Math.floor((mn+mx)/2);
+      return `<div class="render-slot"><label>${slot.label} ${req}</label><input type="range" min="${mn}" max="${mx}" value="${mid}" style="width:100%" oninput="this.nextElementSibling.textContent=this.value+' months'" /><div style="font-size:12px;color:#6b7280;margin-top:4px">${mid} months</div></div>`;
+
+    case 'metric-display':
+      return `<div class="render-slot"><div class="a2ui-metric"><div style="font-size:11px;color:#6366f1;font-weight:700;text-transform:uppercase;letter-spacing:.06em">${slot.label}</div><div style="font-size:24px;font-weight:800;color:#312e81;margin-top:4px">${slot.computedValue||curr+'694/mo'}</div><div style="font-size:11px;color:#818cf8;margin-top:2px">⚡ Deterministic · 0 tokens</div></div></div>`;
+
+    case 'text-display':
+      return `<div class="render-slot"><div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px;font-size:13px;color:#0369a1">ℹ️ ${slot.computedValue||slot.label}</div></div>`;
+
+    case 'checkbox':
+      return `<div class="render-slot"><label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;font-size:13px;color:#374151"><input type="checkbox" style="margin-top:2px;accent-color:#4f46e5" /><span>${slot.label} ${req}</span></label></div>`;
+
+    case 'button':
+      const isPrimary = slot.variant==='primary';
+      return `<button onclick="showToast('✓ Action dispatched: ${slot.id}')" style="width:100%;padding:10px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;border:${isPrimary?'none':'1px solid #d1d5db'};background:${isPrimary?'#4f46e5':'#fff'};color:${isPrimary?'#fff':'#374151'}">${slot.label}</button>`;
+
+    default:
+      return `<div class="render-slot" style="font-size:12px;color:#9ca3af">[${slot.type}] ${slot.label}</div>`;
+  }
+}
+
+function renderFormHTML(result, title, icon) {
+  if (!result) return `<div style="padding:20px;color:#9ca3af;font-size:13px">No XD found</div>`;
+  return `
+    <div style="padding:16px">
+      <div style="font-size:11px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">${icon} ${title}</div>
+      ${result.slots.map(s=>slotHTML(s)).join('')}
+    </div>`;
+}
+
+// ============================================================
+// JSON HIGHLIGHTER
+// ============================================================
+function hl(obj) {
+  const s = JSON.stringify(obj, null, 2);
+  return s
+    .replace(/("[\w_-]+")\s*:/g, '<span class="json-key">$1</span>:')
+    .replace(/:\s*(".*?")/g, ': <span class="json-str">$1</span>')
+    .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-num">$1</span>')
+    .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>')
+    .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
+}
+
+// ============================================================
+// BADGE / PILL HELPERS
+// ============================================================
+function statusBadge(s) {
+  const map = { stable:'badge-stable', staging:'badge-staging', draft:'badge-draft', deprecated:'badge-deprecated', archived:'badge-archived' };
+  return `<span class="badge ${map[s]||'badge-draft'}">${s}</span>`;
+}
+function channelPill(ch) {
+  const map = { web:'pill-web', chatbot:'pill-chatbot', copilot:'pill-copilot', mobile:'pill-mobile', portal:'pill-portal' };
+  return `<span class="pill ${map[ch]||''}">${ch}</span>`;
+}
+
+// ============================================================
+// VIEW: DASHBOARD
+// ============================================================
+function viewDashboard() {
+  const bars = [42,58,71,65,82,90,78,88,74,92,85,96,88,72,60,54,78,94,87,80,72,65,58,48];
+  const barHtml = bars.map((v,i)=>`<div class="bar-chart-bar" style="height:${v}%;width:100%;background:${i===23?'#a5b4fc':'#6366f1'}" title="${v*11} renders"></div>`).join('');
+  const sigRows = MOCK.recentSignals.map(s=>`
+    <tr class="signal-row">
+      <td class="code" style="color:#64748b">${s.ts}</td>
+      <td><span style="font-size:12px;font-weight:500;color:#0f172a">${s.skill}</span></td>
+      <td>${channelPill(s.channel)}</td>
+      <td class="code" style="color:${s.cache?'#16a34a':'#374151'}">${s.cache?'&lt;0.1ms':'  '+s.ms+'ms'}</td>
+      <td class="code" style="color:#6366f1">0</td>
+      <td>${s.rules.map(r=>`<span style="font-size:10px;background:#f0f4ff;color:#4f46e5;padding:1px 6px;border-radius:4px;margin-right:3px;font-family:monospace">${r}</span>`).join('')}</td>
+    </tr>`).join('');
+
+  return `
+  <div style="padding:24px;max-width:1200px">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Dashboard</h1>
+        <p style="font-size:13px;color:#64748b;margin-top:2px">Acme Bank · acme-bank · Sunday, Jun 15, 2026</p>
+      </div>
+      <button class="btn-primary" data-action="nav" data-view="studio">+ New Skill via AI</button>
+    </div>
+
+    <!-- Metrics -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      <div class="metric-card">
+        <div style="font-size:12px;color:#64748b;font-weight:500">Renders Today</div>
+        <div style="font-size:30px;font-weight:800;color:#0f172a;margin-top:4px;letter-spacing:-.02em">10,247</div>
+        <div style="font-size:12px;color:#16a34a;margin-top:4px">↑ 12% vs yesterday</div>
+      </div>
+      <div class="metric-card">
+        <div style="font-size:12px;color:#64748b;font-weight:500">p95 Render Latency</div>
+        <div style="font-size:30px;font-weight:800;color:#0f172a;margin-top:4px;letter-spacing:-.02em">4.2<span style="font-size:16px;font-weight:500;color:#64748b">ms</span></div>
+        <div style="font-size:12px;color:#16a34a;margin-top:4px">✓ Under 10ms SLA</div>
+      </div>
+      <div class="metric-card">
+        <div style="font-size:12px;color:#64748b;font-weight:500">Cache Hit Rate</div>
+        <div style="font-size:30px;font-weight:800;color:#0f172a;margin-top:4px;letter-spacing:-.02em">94.3<span style="font-size:16px;font-weight:500;color:#64748b">%</span></div>
+        <div style="font-size:12px;color:#16a34a;margin-top:4px">↑ 2.1% this week</div>
+      </div>
+      <div class="metric-card" style="background:linear-gradient(135deg,#f0fdf4,#dcfce7)">
+        <div style="font-size:12px;color:#15803d;font-weight:500">AI Tokens Used</div>
+        <div style="font-size:30px;font-weight:800;color:#14532d;margin-top:4px;letter-spacing:-.02em">0</div>
+        <div style="font-size:12px;color:#15803d;margin-top:4px">⚡ 100% deterministic</div>
+      </div>
+    </div>
+
+    <div class="grid gap-4" style="grid-template-columns:1fr 280px">
+      <!-- Chart + Signals -->
+      <div>
+        <div class="card mb-4" style="padding:20px">
+          <div class="flex items-center justify-between mb-4">
+            <span style="font-size:14px;font-weight:600;color:#0f172a">Renders — Last 24 Hours</span>
+            <span style="font-size:12px;color:#64748b">Total: 10,247</span>
+          </div>
+          <div style="display:flex;align-items:flex-end;gap:3px;height:80px">
+            ${barHtml}
+          </div>
+          <div class="flex justify-between mt-2" style="font-size:10px;color:#94a3b8">
+            <span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>now</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="flex items-center justify-between" style="padding:14px 20px;border-bottom:1px solid #f1f5f9">
+            <span style="font-size:14px;font-weight:600;color:#0f172a">Recent Render Signals</span>
+            <span style="font-size:12px;color:#6366f1;cursor:pointer" data-action="nav" data-view="analytics">View all →</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead>
+              <tr style="background:#f8fafc">
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:600">TIME</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:600">SKILL</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:600">CHANNEL</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:600">LATENCY</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:600">TOKENS</th>
+                <th style="padding:8px 12px;text-align:left;font-size:11px;color:#64748b;font-weight:600">RULES FIRED</th>
+              </tr>
+            </thead>
+            <tbody>${sigRows}</tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div>
+        <div class="card mb-4" style="padding:16px">
+          <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:12px">Skills by Status</div>
+          ${[['stable',4,'#16a34a'],['staging',1,'#ca8a04'],['draft',1,'#64748b']].map(([s,n,c])=>`
+            <div class="flex items-center gap-2 mb-2">
+              <div style="width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0"></div>
+              <div style="flex:1;font-size:12px;color:#374151">${s}</div>
+              <div style="font-size:12px;font-weight:700;color:#0f172a">${n}</div>
+              <div style="flex:1;background:#f1f5f9;border-radius:3px;height:6px;overflow:hidden"><div style="height:100%;width:${n/6*100}%;background:${c};border-radius:3px"></div></div>
+            </div>`).join('')}
+        </div>
+
+        <div class="card mb-4" style="padding:16px">
+          <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:12px">Active Agents</div>
+          ${MOCK.agents.map(a=>`
+            <div class="flex items-center gap-2 mb-3">
+              <div class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:500;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.name}</div>
+                <div style="font-size:11px;color:#64748b">${a.channels.join(', ')} · ${a.capabilities.length} skills</div>
+              </div>
+              <div style="font-size:11px;color:#16a34a;white-space:nowrap">−${a.tokens_saved.toLocaleString()} tkn</div>
+            </div>`).join('')}
+        </div>
+
+        <div class="card" style="padding:16px">
+          <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:12px">Quick Actions</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn-secondary w-full text-left" style="text-align:left;font-size:12px" data-action="nav" data-view="studio">✦ New Skill via AI</button>
+            <button class="btn-secondary w-full text-left" style="text-align:left;font-size:12px" data-action="nav" data-view="preview">▶ Open Preview Bench</button>
+            <button class="btn-secondary w-full text-left" style="text-align:left;font-size:12px" data-action="nav" data-view="mcp">⌘ Test MCP Gateway</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// VIEW: SKILLS
+// ============================================================
+function skillsList() {
+  const q = S.skillSearch.toLowerCase();
+  const filtered = MOCK.skills.filter(sk => {
+    const matchQ = !q || sk.name.toLowerCase().includes(q) || sk.skill_id.includes(q) || sk.domain.includes(q);
+    const matchF = S.skillFilter==='all' || sk.status===S.skillFilter;
+    return matchQ && matchF;
+  });
+  if (!filtered.length) return `<div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">No skills found</div>`;
+  return filtered.map(sk=>`
+    <div class="skill-row" data-action="skill-detail" data-id="${sk.skill_id}">
+      <div>
+        <div style="font-size:14px;font-weight:600;color:#0f172a;display:flex;align-items:center;gap:6px">
+          ${sk.name}
+          ${sk.is_composite ? '<span style="font-size:10px;background:#f0f4ff;color:#6366f1;padding:1px 6px;border-radius:4px;font-weight:700">COMPOSITE</span>' : ''}
+        </div>
+        <div style="font-size:12px;color:#64748b;margin-top:2px;font-family:monospace">${sk.skill_id}</div>
+      </div>
+      <div style="font-size:12px;color:#64748b">${sk.domain}<br><span style="color:#94a3b8">${sk.category}</span></div>
+      <div class="code" style="font-size:12px;color:#374151">v${sk.version}</div>
+      <div>${statusBadge(sk.status)}</div>
+      <div>${sk.channels.map(channelPill).join('')}</div>
+      <div style="display:flex;gap:4px">
+        <span style="font-size:11px;color:#6366f1;cursor:pointer;font-weight:500" data-action="preview-skill" data-id="${sk.skill_id}">Preview</span>
+      </div>
+    </div>`).join('');
+}
+
+function viewSkills() {
+  const filterBtns = ['all','stable','staging','draft','deprecated'].map(f=>
+    `<button class="tab ${S.skillFilter===f?'active':''}" data-action="skill-filter" data-filter="${f}">${f==='all'?'All':f.charAt(0).toUpperCase()+f.slice(1)}</button>`).join('');
+  return `
+  <div style="padding:24px;max-width:1100px">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Skill Registry</h1>
+        <p style="font-size:13px;color:#64748b;margin-top:2px">${MOCK.skills.length} skills · org: acme-bank</p>
+      </div>
+      <button class="btn-primary" data-action="nav" data-view="studio">+ New Skill</button>
+    </div>
+
+    <div class="card">
+      <div class="flex items-center gap-3" style="padding:14px 16px;border-bottom:1px solid #f1f5f9">
+        <input id="skill-search" type="text" value="${S.skillSearch}" placeholder="Search skills…"
+          style="flex:1;border:1px solid #e2e8f0;border-radius:7px;padding:7px 12px;font-size:13px;outline:none"
+          oninput="S.skillSearch=this.value;document.getElementById('skills-list').innerHTML=skillsList()" />
+        <div style="display:flex;gap:4px">${filterBtns}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2fr 1.2fr .8fr 1fr 1.4fr .6fr;padding:8px 20px;background:#f8fafc;border-bottom:1px solid #f1f5f9">
+        ${['SKILL','DOMAIN / CATEGORY','VERSION','STATUS','CHANNELS',''].map(h=>`<div style="font-size:11px;font-weight:700;color:#64748b;letter-spacing:.04em">${h}</div>`).join('')}
+      </div>
+      <div id="skills-list">${skillsList()}</div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// VIEW: SKILL DETAIL
+// ============================================================
+function viewSkillDetail(id) {
+  const sk = MOCK.skills.find(s=>s.skill_id===id);
+  if (!sk) return `<div style="padding:40px;color:#9ca3af">Skill not found</div>`;
+  const relatedXDs = MOCK.xds.filter(x=>x.implements_skill===id);
+  const relatedAgents = MOCK.agents.filter(a=>a.capabilities.includes(id));
+  return `
+  <div style="padding:24px;max-width:900px">
+    <div class="flex items-center gap-3 mb-5">
+      <button class="btn-secondary" style="font-size:12px" data-action="nav" data-view="skills">← Skills</button>
+      <h1 class="text-xl font-bold text-slate-900">${sk.name}</h1>
+      ${statusBadge(sk.status)}
+      ${sk.is_composite?'<span style="font-size:11px;background:#f0f4ff;color:#6366f1;padding:2px 8px;border-radius:5px;font-weight:700">COMPOSITE</span>':''}
+    </div>
+
+    <div class="grid gap-4 mb-4" style="grid-template-columns:2fr 1fr">
+      <div class="card" style="padding:20px">
+        <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:12px">Skill Metadata</div>
+        ${[
+          ['Skill ID', `<span class="code" style="color:#6366f1">${sk.skill_id}</span>`],
+          ['Description', sk.description],
+          ['Domain', sk.domain],
+          ['Category', sk.category],
+          ['Version', `<span class="code">v${sk.version}</span>`],
+          ['Owner Team', sk.owner_team],
+          ['Auth Required', sk.auth_required?'Yes':'No'],
+          ['Composite', sk.is_composite?'Yes — contains child skills':'No'],
+          ['AI Fallback Tokens', sk.estimated_tokens_fallback ? sk.estimated_tokens_fallback+' (fallback only)' : 'N/A'],
+          ['Deterministic Tokens', '<span style="color:#16a34a;font-weight:600">0</span>'],
+          ['Compliance Tags', sk.compliance_tags.length ? sk.compliance_tags.map(t=>`<span style="font-size:11px;background:#fef9c3;color:#854d0e;padding:2px 7px;border-radius:4px;margin-right:4px">${t}</span>`).join('') : '<span style="color:#9ca3af;font-size:12px">None</span>'],
+          ['Channels', sk.channels.map(channelPill).join('')]
+        ].map(([k,v])=>`<div class="flex gap-3 mb-3"><div style="font-size:12px;font-weight:500;color:#64748b;width:140px;flex-shrink:0">${k}</div><div style="font-size:13px;color:#0f172a">${v}</div></div>`).join('')}
+      </div>
+
+      <div>
+        <div class="card mb-4" style="padding:16px">
+          <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:10px">XD Implementations</div>
+          ${relatedXDs.length ? relatedXDs.map(xd=>`
+            <div class="flex items-center gap-2 mb-3 cursor-pointer" data-action="preview-xd" data-id="${xd.xd_id}">
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:500;color:#4f46e5">${xd.name}</div>
+                <div style="font-size:11px;color:#64748b">${xd.channels.map(channelPill).join('')}</div>
+              </div>
+              ${statusBadge(xd.status)}
+            </div>`).join('') : `<div style="font-size:12px;color:#9ca3af">No XDs yet</div>`}
+          <button class="btn-secondary" style="width:100%;margin-top:8px;font-size:12px" data-action="nav" data-view="studio">+ Create XD</button>
+        </div>
+
+        <div class="card" style="padding:16px">
+          <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:10px">Agents Using This Skill</div>
+          ${relatedAgents.length ? relatedAgents.map(a=>`
+            <div class="flex items-center gap-2 mb-2">
+              <div class="w-2 h-2 rounded-full bg-green-400 flex-shrink-0"></div>
+              <div style="font-size:12px;font-weight:500;color:#0f172a">${a.name}</div>
+              <span style="font-size:10px;background:#f1f5f9;color:#64748b;padding:1px 6px;border-radius:4px">${a.agent_type}</span>
+            </div>`).join('') : `<div style="font-size:12px;color:#9ca3af">No agents registered</div>`}
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px">
+      <button class="btn-primary" data-action="preview-skill" data-id="${sk.skill_id}">▶ Preview in Bench</button>
+      <button class="btn-secondary" data-action="nav" data-view="mcp">⌘ Test via MCP Gateway</button>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// VIEW: XD REGISTRY
+// ============================================================
+function viewXDRegistry() {
+  return `
+  <div style="padding:24px;max-width:1000px">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">XD Registry</h1>
+        <p style="font-size:13px;color:#64748b;margin-top:2px">${MOCK.xds.length} experience definitions</p>
+      </div>
+      <button class="btn-primary" data-action="nav" data-view="studio">+ New XD</button>
+    </div>
+    ${MOCK.xds.map(xd=>{
+      const sk = MOCK.skills.find(s=>s.skill_id===xd.implements_skill);
+      return `
+      <div class="card mb-3" style="padding:18px;cursor:pointer" data-action="preview-xd" data-id="${xd.xd_id}">
+        <div class="flex items-start justify-between">
+          <div style="flex:1">
+            <div class="flex items-center gap-2 mb-1">
+              <span style="font-size:15px;font-weight:700;color:#0f172a">${xd.name}</span>
+              ${statusBadge(xd.status)}
+            </div>
+            <div style="font-size:12px;color:#64748b;margin-bottom:8px">
+              <span class="code">xd_id: ${xd.xd_id}</span>  ·  <span class="code">v${xd.version}</span>  ·  template: <span class="code">${xd.template_id}</span>
+            </div>
+            <div class="flex items-center gap-3">
+              <span style="font-size:12px;color:#374151">Implements: <span style="color:#6366f1;font-weight:500">${sk?.name||xd.implements_skill}</span></span>
+              <span style="font-size:12px;color:#64748b">•</span>
+              <span style="font-size:12px;color:#374151">${xd.slots.length} slots</span>
+              <span style="font-size:12px;color:#64748b">•</span>
+              <span style="font-size:12px;color:#374151">${xd.rules.length} rules</span>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div>${xd.channels.map(channelPill).join('')}</div>
+            <span style="font-size:12px;color:#6366f1;font-weight:500;margin-left:8px">Preview →</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+// ============================================================
+// VIEW: AI STUDIO
+// ============================================================
+const CHAT_FLOWS = [
+  { trigger: /./i, reply: `I'm your AI experience designer. I'll help you create a skill and XD manifest for OmniUI Fabric.\n\nTell me what kind of experience you want to build. For example: *"I need a loan application form"* or *"Create an account opening flow"*.` },
+  { trigger: /loan|borrow|credit|mortgage/i, reply: `Great — let's build a loan application skill.\n\nA few quick questions:\n1. What **loan types** should be supported? (Personal, Business, Vehicle…)\n2. What's the **maximum loan amount**?\n3. Which **channels** — web form, chatbot, copilot?\n\nAnswer all three and I'll generate the full manifest.` },
+  { trigger: /personal|business|vehicle|500|1000|web|chatbot|both|all/i, reply: `Perfect. Generating your skill + XD manifest now…`, generateYAML: true },
+];
+
+const GENERATED_YAML = `# OmniUI Fabric — Auto-generated Manifest
+# skill: apply-for-loan  |  org: acme-bank  |  generated: 2026-06-15
+
+skill:
+  skill_id: apply-for-loan
+  org_id: acme-bank
+  name: Apply for Loan
+  domain: financial-services
+  category: transaction
+  version: 2.1.0
+  status: draft
+  description: >
+    Enables customers to apply for personal or business loans
+    with real-time eligibility checking and deterministic rendering.
+  compliance_tags: [PCI-DSS, GDPR]
+  auth_required: true
+  is_composite: false
+  ai_fallback_enabled: false
+  estimated_tokens_ui: 0
+
+experience_definition:
+  xd_id: apply-for-loan-web-v2
+  org_id: acme-bank
+  name: Loan Application — Web
+  implements_skill: apply-for-loan
+  template_id: sys:single-step-form
+  version: 1.0.0
+  status: draft
+  channels: [web, chatbot, copilot]
+
+  slots:
+    - id: loan-type
+      type: select
+      label: Loan Type
+      bind: "$.loanType"
+      required: true
+      options: [Personal, Business, Vehicle, Home Improvement]
+
+    - id: loan-amount
+      type: currency-input
+      label: Loan Amount
+      bind: "$.loanAmount"
+      required: true
+      validation:
+        min: 1000
+        max: 500000
+
+    - id: loan-term
+      type: range-slider
+      label: Loan Term (months)
+      bind: "$.loanTerm"
+      required: true
+      validation: { min: 12, max: 84 }
+
+    - id: monthly-payment
+      type: metric-display
+      label: Est. Monthly Payment
+      compute: "PMT(0.05/12, $.loanTerm, $.loanAmount)"
+      visible_if: "true"
+
+    - id: submit
+      type: button
+      label: Submit Application
+      variant: primary
+
+  rules:
+    - id: chatbot-compact
+      condition: "channel == 'chatbot'"
+      priority: 4
+      patch:
+        hide: [monthly-payment]
+        layout: compact
+
+    - id: copilot-minimal
+      condition: "channel == 'copilot'"
+      priority: 4
+      patch:
+        hide: [monthly-payment, loan-term]
+
+  actions:
+    - action_id: submit
+      label: Submit Application
+      webhook_url: /api/webhooks/loan-apply
+      payload_schema:
+        type: object
+        required: [loanType, loanAmount, loanTerm]`;
+
+function viewStudio() {
+  const msgs = S.chatHistory.length===0
+    ? [{ role:'ai', text:'Hi! I\'m your AI experience designer.\n\nI\'ll help you create a skill and XD manifest for OmniUI Fabric. Just tell me what kind of experience you want to build — for example:\n\n• *"I need a loan application form"*\n• *"Create an identity verification flow"*\n• *"Build an account status checker"*' }]
+    : S.chatHistory;
+
+  const chatHtml = msgs.map(m=>`
+    <div class="chat-bubble ${m.role==='ai'?'chat-ai':'chat-user'}">
+      ${m.role==='ai'?'<div style="font-size:10px;font-weight:700;color:#6366f1;margin-bottom:6px;letter-spacing:.04em">AI DESIGNER</div>':'<div style="font-size:10px;font-weight:700;color:#15803d;margin-bottom:6px;letter-spacing:.04em">YOU</div>'}
+      <div style="white-space:pre-wrap">${m.text.replace(/\*([^*]+)\*/g,'<strong>$1</strong>').replace(/•/g,'&bull;')}</div>
+    </div>`).join('');
+
+  const rightContent = S.generatedManifest
+    ? `<div class="code-block" style="height:100%;min-height:400px">${S.generatedManifest.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`
+    : `<div style="height:100%;min-height:400px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border:2px dashed #e2e8f0;border-radius:10px">
+        <div style="font-size:40px;margin-bottom:12px">✦</div>
+        <div style="font-size:14px;font-weight:600;color:#374151;margin-bottom:4px">Manifest will appear here</div>
+        <div style="font-size:13px;color:#94a3b8">Chat with the AI to generate a skill + XD manifest</div>
+       </div>`;
+
+  const suggestions = S.chatPhase===0
+    ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        ${['I need a loan application form','Create an identity verification flow','Build an account status checker'].map(s=>
+          `<button class="tab" style="font-size:12px" data-action="chat-suggest" data-text="${s}">${s}</button>`).join('')}
+       </div>` : '';
+
+  return `
+  <div style="display:flex;flex-direction:column;height:100%">
+    <!-- Header -->
+    <div class="flex items-center justify-between flex-shrink-0" style="padding:14px 24px;border-bottom:1px solid #e2e8f0;background:#fff">
+      <div>
+        <h1 class="font-bold text-slate-900" style="font-size:16px">AI Studio</h1>
+        <p style="font-size:12px;color:#64748b">Natural language → Skill + XD manifest</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        ${S.generatedManifest ? `<button class="btn-primary" data-action="nav" data-view="preview">▶ Preview in Bench</button>` : ''}
+        <button class="btn-secondary" style="font-size:12px" data-action="clear-chat">↺ Reset</button>
+      </div>
+    </div>
+
+    <!-- Split pane -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;overflow:hidden">
+      <!-- Left: Chat -->
+      <div style="display:flex;flex-direction:column;border-right:1px solid #e2e8f0;overflow:hidden">
+        <div id="chat-messages" style="flex:1;overflow-y:auto;padding:16px">${chatHtml}</div>
+        <div style="padding:12px 14px;border-top:1px solid #e2e8f0;background:#fff">
+          ${suggestions}
+          <div style="display:flex;gap:8px">
+            <textarea id="chat-input" rows="2" placeholder="Describe the experience you want to build…" style="flex:1;font-size:13px;resize:none;border-radius:8px;border:1px solid #d1d5db;padding:8px 12px;outline:none"></textarea>
+            <button class="btn-primary" style="align-self:flex-end;padding:10px 16px" data-action="send-chat">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Manifest -->
+      <div style="display:flex;flex-direction:column;overflow:hidden">
+        <div class="flex items-center gap-2 flex-shrink-0" style="padding:10px 14px;border-bottom:1px solid #e2e8f0;background:#f8fafc">
+          <span style="font-size:12px;font-weight:600;color:#0f172a">Generated Manifest</span>
+          ${S.generatedManifest ? `<span style="font-size:11px;background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:4px;font-weight:600">YAML</span>` : ''}
+          <div style="flex:1"></div>
+          ${S.generatedManifest ? `<button class="btn-secondary" style="font-size:11px;padding:4px 10px" data-action="copy-manifest">Copy</button>` : ''}
+        </div>
+        <div style="flex:1;overflow:auto;padding:14px">${rightContent}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// VIEW: PREVIEW BENCH
+// ============================================================
+function viewPreview() {
+  const xd = MOCK.xds.find(x=>x.xd_id===S.previewXD);
+  const ctx = { channel: S.previewChannel, user_tier: S.previewTier, locale: S.previewLocale, device_width: S.previewDeviceWidth };
+
+  // Run runtime for all three channels to show comparison
+  const webCtx    = { ...ctx, channel:'web' };
+  const chatCtx   = { ...ctx, channel:'chatbot' };
+
+  const webResult  = runRuntime(S.previewXD, webCtx);
+  const chatResult = runRuntime(S.previewXD, chatCtx);
+
+  // Primary result (for A2UI + rules panel)
+  const primaryCtx = ctx;
+  const primary    = S.previewChannel==='chatbot' ? chatResult : (S.previewChannel==='copilot' ? runRuntime(S.previewXD, {...ctx,channel:'copilot'}) : webResult);
+
+  const xdOpts = MOCK.xds.map(x=>`<option value="${x.xd_id}" ${x.xd_id===S.previewXD?'selected':''}>${x.name}</option>`).join('');
+
+  const rulesHtml = (xd?.rules||[]).map(r=>{
+    const matched = primary?.rules_applied?.includes(r.id);
+    return `<div class="rule-row ${matched?'matched':''}">
+      <span class="rule-id">${r.id}</span>
+      <div style="flex:1">
+        <div style="font-size:12px;color:#374151;margin-bottom:2px">${r.description}</div>
+        <div class="code" style="font-size:11px;color:#64748b">condition: ${r.condition}</div>
+      </div>
+      <span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;${matched?'background:#dcfce7;color:#15803d':'background:#f1f5f9;color:#94a3b8'}">${matched?'✓ FIRED':'—'}</span>
+    </div>`;
+  }).join('');
+
+  const a2uiOut = primary ? {
+    a2ui_version: '0.8',
+    session_id: primary.session_id,
+    xd_id: primary.xd_id,
+    xd_version: primary.xd_version,
+    skill_id: primary.skill_id,
+    org_id: 'acme-bank',
+    layout: {
+      type: 'Card',
+      props: { elevation: 2, padding: 'md' },
+      children: primary.slots.map(s=>({
+        id: s.id,
+        type: s.type==='button'?'Button':'OmniUI.'+s.type.split('-').map(w=>w[0].toUpperCase()+w.slice(1)).join(''),
+        props: { label: s.label, ...(s.required?{required:true}:{}), ...(s.computedValue?{value:s.computedValue}:{}) }
+      }))
+    },
+    meta: { render_ms: primary.render_ms, tokens_used: 0, cache_hit: primary.cache_hit, rules_applied: primary.rules_applied, bundle_size_bytes: primary.bundle_size_bytes }
+  } : {};
+
+  return `
+  <div style="display:flex;flex-direction:column;height:100%">
+    <!-- Controls bar -->
+    <div class="flex items-center gap-4 flex-shrink-0" style="padding:12px 20px;border-bottom:1px solid #e2e8f0;background:#fff">
+      <select style="border:1px solid #e2e8f0;border-radius:7px;padding:6px 28px 6px 10px;font-size:13px;background:#fff;outline:none" onchange="S.previewXD=this.value;navigate('preview')">${xdOpts}</select>
+      <div style="width:1px;height:24px;background:#e2e8f0"></div>
+      <span style="font-size:12px;font-weight:600;color:#64748b">Context:</span>
+      ${[['User Tier',['standard','premium'],'previewTier'],['Locale',['en-US','en-GB'],'previewLocale']].map(([lbl,opts,key])=>
+        `<div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:12px;color:#64748b">${lbl}:</span>
+          <select style="border:1px solid #e2e8f0;border-radius:6px;padding:4px 24px 4px 8px;font-size:12px;background:#fff;outline:none" onchange="S['${key}']=this.value;navigate('preview')">
+            ${opts.map(o=>`<option ${S[key]===o?'selected':''}>${o}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+      <div style="flex:1"></div>
+      <div style="font-size:11px;background:${primary?.cache_hit?'#dcfce7':'#fef9c3'};color:${primary?.cache_hit?'#15803d':'#a16207'};padding:3px 10px;border-radius:6px;font-weight:600">
+        ${primary?.cache_hit?'⚡ Cache HIT':'🔄 Cache MISS'} · ${primary?.render_ms}ms · 0 tokens
+      </div>
+    </div>
+
+    <!-- Two-column preview + sidebar -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 320px;gap:0;flex:1;overflow:hidden">
+
+      <!-- Web render -->
+      <div style="overflow:auto;border-right:1px solid #e2e8f0;padding:16px">
+        <div class="channel-frame">
+          <div class="channel-frame-header">
+            <span style="width:10px;height:10px;background:#6366f1;border-radius:50%;display:inline-block"></span>
+            WEB CHANNEL
+            <span style="margin-left:auto;font-size:10px;background:#f1f5f9;padding:1px 6px;border-radius:4px">${webResult?.slots?.length||0} slots</span>
+          </div>
+          ${renderFormHTML(webResult,'Loan Application','📋')}
+        </div>
+      </div>
+
+      <!-- Chatbot render -->
+      <div style="overflow:auto;border-right:1px solid #e2e8f0;padding:16px">
+        <div class="channel-frame" style="border:1px solid #f5d0fe">
+          <div class="channel-frame-header" style="background:#fdf4ff">
+            <span style="width:10px;height:10px;background:#a855f7;border-radius:50%;display:inline-block"></span>
+            CHATBOT CHANNEL
+            <span style="margin-left:auto;font-size:10px;background:#fae8ff;color:#7e22ce;padding:1px 6px;border-radius:4px">${chatResult?.slots?.length||0} slots</span>
+          </div>
+          <!-- Chatbot chrome wrapper -->
+          <div style="padding:12px">
+            <div style="background:#f5d0fe;border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:13px;color:#581c87">
+              🤖 <strong>Lending Assistant:</strong> To apply for a loan, I'll need a few details from you.
+            </div>
+            ${(chatResult?.slots||[]).map(s=>slotHTML(s)).join('')}
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Rules + A2UI -->
+      <div style="overflow:auto;background:#f8fafc;border-left:1px solid #e2e8f0">
+        <!-- Rules panel -->
+        <div style="padding:14px;border-bottom:1px solid #e2e8f0">
+          <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">Rules Evaluated</div>
+          ${rulesHtml || '<div style="font-size:12px;color:#9ca3af">No rules defined</div>'}
+        </div>
+        <!-- A2UI Output -->
+        <div style="padding:14px">
+          <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">A2UI Output</div>
+          <div class="code-block" style="font-size:11px;max-height:300px;overflow:auto">${hl(a2uiOut)}</div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// VIEW: MCP GATEWAY
+// ============================================================
+const MCP_TOOLS = {
+  find_skill: {
+    description: 'Discover skills by intent, domain, or channel. Returns ranked list.',
+    params: [
+      { id:'org_id',   label:'org_id',  type:'text', default:'acme-bank', required:true },
+      { id:'query',    label:'query',   type:'text', default:'loan application', required:false },
+      { id:'channel',  label:'channel', type:'select', opts:['web','chatbot','copilot','mobile','portal'], default:'web' },
+      { id:'status',   label:'status',  type:'select', opts:['stable','staging','draft'], default:'stable' }
+    ]
+  },
+  execute_skill: {
+    description: 'Execute a skill — resolves XD, runs runtime, returns A2UI component tree.',
+    params: [
+      { id:'org_id',   label:'org_id',   type:'text', default:'acme-bank', required:true },
+      { id:'skill_id', label:'skill_id', type:'text', default:'apply-for-loan', required:true },
+      { id:'channel',  label:'channel',  type:'select', opts:['web','chatbot','copilot'], default:'web' },
+      { id:'user_tier',label:'user.tier',type:'select', opts:['standard','premium'], default:'standard' },
+      { id:'locale',   label:'user.locale',type:'select',opts:['en-US','en-GB'],default:'en-US' }
+    ]
+  },
+  dispatch_action: {
+    description: 'Submit a user action event from a rendered XD — validates payload and fires webhook.',
+    params: [
+      { id:'org_id',     label:'org_id',     type:'text', default:'acme-bank', required:true },
+      { id:'session_id', label:'session_id', type:'text', default:'sess_abc123', required:true },
+      { id:'xd_id',      label:'xd_id',      type:'text', default:'loan-application-web', required:true },
+      { id:'action_id',  label:'action_id',  type:'select', opts:['submit','check','confirm','cancel'], default:'submit' }
+    ]
+  },
+  get_skill_graph: {
+    description: 'Return an agent\'s full skill capability graph for introspection.',
+    params: [
+      { id:'org_id',   label:'org_id',   type:'text', default:'acme-bank', required:true },
+      { id:'agent_id', label:'agent_id', type:'select', opts:['lending-agent-v2','onboarding-copilot'], default:'lending-agent-v2' }
+    ]
+  }
+};
+
+let mcpParams = {};
+
+function mcpSimulate(tool, params) {
+  const p = params;
+  if (tool==='find_skill') {
+    const results = MOCK.skills.filter(s=>s.status===(p.status||'stable') && s.channels.includes(p.channel||'web')).slice(0,3);
+    return { results: results.map((s,i)=>({ skill_id:s.skill_id, name:s.name, confidence:+(0.97-i*0.07).toFixed(2), domain:s.domain, xd_count:MOCK.xds.filter(x=>x.implements_skill===s.skill_id).length })), total: results.length, query_ms: +(Math.random()*4+1).toFixed(1) };
+  }
+  if (tool==='execute_skill') {
+    const ctx = { channel:p.channel||'web', user_tier:p.user_tier||'standard', locale:p.locale||'en-US', device_width:1200 };
+    const xd = MOCK.xds.find(x=>x.implements_skill===(p.skill_id||'apply-for-loan'));
+    const result = xd ? runRuntime(xd.xd_id, ctx) : null;
+    return result ? { ...result, agui_stream_url: `wss://fabric.acme-bank.com/stream/${result.session_id}` } : { error:'No XD found for skill + channel combination' };
+  }
+  if (tool==='dispatch_action') {
+    return { status:'dispatched', action_id:p.action_id||'submit', session_id:p.session_id||'sess_abc123', webhook_url:'/api/webhooks/loan-apply', webhook_status:202, payload_valid:true, dispatch_ms:+(Math.random()*8+2).toFixed(1) };
+  }
+  if (tool==='get_skill_graph') {
+    const agent = MOCK.agents.find(a=>a.agent_id===(p.agent_id||'lending-agent-v2'));
+    if (!agent) return { error:'Agent not found' };
+    return { agent_id:agent.agent_id, name:agent.name, agent_type:agent.agent_type, channels:agent.channels, capabilities:agent.capabilities.map(cid=>{ const sk=MOCK.skills.find(s=>s.skill_id===cid); return { skill_id:cid, name:sk?.name||cid, status:sk?.status||'stable', xds:MOCK.xds.filter(x=>x.implements_skill===cid).length }; }) };
+  }
+  return { error:'Unknown tool' };
+}
+
+function viewMCP() {
+  const tool = MOCK_MCP_TOOL || S.mcpTool;
+  const def = MCP_TOOLS[tool];
+  const toolBtns = Object.keys(MCP_TOOLS).map(t=>
+    `<button class="tab ${tool===t?'active':''}" data-action="mcp-tool" data-tool="${t}" style="font-size:12px">${t}</button>`).join('');
+
+  const paramForm = def.params.map(p=>{
+    if (p.type==='select') return `
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:4px">${p.label}${p.required?'<span style="color:#ef4444"> *</span>':''}</label>
+        <select id="mcp-${p.id}" style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;background:#fff;outline:none">
+          ${p.opts.map(o=>`<option ${o===p.default?'selected':''}>${o}</option>`).join('')}
+        </select>
+      </div>`;
+    return `
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:12px;font-weight:500;color:#374151;margin-bottom:4px">${p.label}${p.required?'<span style="color:#ef4444"> *</span>':''}</label>
+        <input id="mcp-${p.id}" type="text" value="${p.default||''}" style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;outline:none" />
+      </div>`;
+  }).join('');
+
+  const responseHtml = S.mcpResponse
+    ? `<div class="code-block" style="font-size:12px;line-height:1.7">${hl(S.mcpResponse)}</div>`
+    : `<div style="height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border:2px dashed #e2e8f0;border-radius:10px">
+        <div style="font-size:11px;color:#9ca3af">Click "Execute Tool" to call the MCP Gateway</div>
+       </div>`;
+
+  return `
+  <div style="padding:24px;max-width:1050px">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">MCP Gateway</h1>
+        <p style="font-size:13px;color:#64748b;margin-top:2px">Interactive MCP tool tester — simulates agent-to-platform calls</p>
+      </div>
+    </div>
+
+    <!-- Tool selector -->
+    <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">${toolBtns}</div>
+
+    <div style="display:grid;grid-template-columns:320px 1fr;gap:16px">
+      <!-- Params panel -->
+      <div class="card" style="padding:16px">
+        <div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:4px">${tool}</div>
+        <div style="font-size:12px;color:#64748b;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #f1f5f9">${def.description}</div>
+        <div id="mcp-params">${paramForm}</div>
+        <button class="btn-primary" style="width:100%" data-action="call-mcp">Execute Tool →</button>
+      </div>
+
+      <!-- Response panel -->
+      <div>
+        <div class="card" style="padding:16px;margin-bottom:12px">
+          <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:12px;text-transform:uppercase;letter-spacing:.06em">Request</div>
+          <div class="code-block" style="font-size:12px">${hl({ tool, org_id:'acme-bank', params:'(fill params and execute)' })}</div>
+        </div>
+        <div class="card" style="padding:16px">
+          <div class="flex items-center justify-between mb-3">
+            <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em">Response</div>
+            ${S.mcpResponse ? `<div style="font-size:11px;background:#dcfce7;color:#15803d;padding:3px 10px;border-radius:6px;font-weight:600">200 OK · ${+(Math.random()*15+3).toFixed(1)}ms</div>` : ''}
+          </div>
+          ${responseHtml}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// hack: track tool selection outside state for quick re-render
+let MOCK_MCP_TOOL = 'find_skill';
+
+// ============================================================
+// VIEW: ANALYTICS
+// ============================================================
+function viewAnalytics() {
+  const bySkill = [
+    { name:'apply-for-loan',          count:5832, pct:57 },
+    { name:'check-application-status',count:2108, pct:21 },
+    { name:'verify-identity',         count:1421, pct:14 },
+    { name:'escalate-to-human',       count:512,  pct:5  },
+    { name:'open-account',            count:374,  pct:4  }
+  ];
+  const byChan = [
+    { ch:'chatbot', count:4210, color:'#a855f7' },
+    { ch:'web',     count:3830, color:'#6366f1' },
+    { ch:'copilot', count:1820, color:'#22c55e' },
+    { ch:'portal',  count:387,  color:'#64748b' }
+  ];
+  return `
+  <div style="padding:24px;max-width:1100px">
+    <div class="flex items-center justify-between mb-5">
+      <div>
+        <h1 class="text-xl font-bold text-slate-900">Analytics</h1>
+        <p style="font-size:13px;color:#64748b;margin-top:2px">Render signal telemetry · Last 30 days</p>
+      </div>
+    </div>
+
+    <!-- Top metrics -->
+    <div class="grid grid-cols-4 gap-4 mb-6">
+      ${[
+        ['Total Renders','284,921','↑ 18% MoM'],
+        ['Avg Render (p95)','4.8ms','✓ SLA met'],
+        ['Cache Hit Rate','93.7%','↑ 1.4 pts'],
+        ['AI Tokens (total)','0','⚡ 100% det.']
+      ].map(([l,v,d])=>`<div class="metric-card"><div style="font-size:12px;color:#64748b;font-weight:500">${l}</div><div style="font-size:28px;font-weight:800;color:#0f172a;margin-top:4px;letter-spacing:-.02em">${v}</div><div style="font-size:12px;color:#16a34a;margin-top:4px">${d}</div></div>`).join('')}
+    </div>
+
+    <div class="grid gap-4" style="grid-template-columns:1fr 300px">
+      <div>
+        <!-- By skill -->
+        <div class="card mb-4" style="padding:20px">
+          <div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:16px">Renders by Skill</div>
+          ${bySkill.map(s=>`
+            <div style="margin-bottom:12px">
+              <div class="flex justify-between mb-1"><span style="font-size:13px;font-weight:500;color:#374151">${s.name}</span><span style="font-size:12px;color:#64748b">${s.count.toLocaleString()}</span></div>
+              <div style="background:#f1f5f9;border-radius:4px;height:8px;overflow:hidden"><div style="height:100%;width:${s.pct}%;background:#6366f1;border-radius:4px;transition:width .5s ease"></div></div>
+            </div>`).join('')}
+        </div>
+
+        <!-- Token savings -->
+        <div class="card" style="padding:20px;background:linear-gradient(135deg,#f0fdf4,#dcfce7)">
+          <div style="font-size:14px;font-weight:700;color:#14532d;margin-bottom:8px">🌱 Token Savings</div>
+          <div class="grid grid-cols-3 gap-4">
+            ${[
+              ['Renders (30d)','284,921'],
+              ['Tokens Saved','~142M'],
+              ['Est. Cost Saved','$4,270']
+            ].map(([l,v])=>`<div><div style="font-size:11px;color:#15803d;font-weight:600">${l}</div><div style="font-size:22px;font-weight:800;color:#14532d;margin-top:2px">${v}</div></div>`).join('')}
+          </div>
+          <div style="font-size:12px;color:#15803d;margin-top:10px">Based on ~500 tokens/render for AI fallback path at $0.00003/token</div>
+        </div>
+      </div>
+
+      <div>
+        <!-- By channel -->
+        <div class="card mb-4" style="padding:16px">
+          <div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:14px">By Channel</div>
+          ${byChan.map(c=>`
+            <div style="margin-bottom:10px">
+              <div class="flex justify-between mb-1"><span style="font-size:13px;font-weight:500;color:#374151">${c.ch}</span><span style="font-size:12px;color:#64748b">${c.count.toLocaleString()}</span></div>
+              <div style="background:#f1f5f9;border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;width:${Math.round(c.count/4210*100)}%;background:${c.color};border-radius:4px"></div></div>
+            </div>`).join('')}
+        </div>
+
+        <!-- Cache + Fallback -->
+        <div class="card" style="padding:16px">
+          <div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:14px">System Health</div>
+          ${[
+            ['Cache Hit Rate','93.7%','#16a34a'],
+            ['AI Fallback Rate','0.0%','#16a34a'],
+            ['Rule Fire Rate','68.4%','#6366f1'],
+            ['Error Rate','0.001%','#16a34a']
+          ].map(([l,v,c])=>`
+            <div class="flex items-center justify-between mb-3">
+              <span style="font-size:13px;color:#374151">${l}</span>
+              <span style="font-size:14px;font-weight:700;color:${c}">${v}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ============================================================
+// APP CONTROLLER
+// ============================================================
+const VIEWS = {
+  dashboard:   { title:'Dashboard',      fn: viewDashboard },
+  skills:      { title:'Skill Registry', fn: viewSkills },
+  'skill-detail': { title:'Skill Detail',fn: (p)=>viewSkillDetail(p.id) },
+  'xd-registry':  { title:'XD Registry', fn: viewXDRegistry },
+  studio:      { title:'AI Studio',      fn: viewStudio },
+  preview:     { title:'Preview Bench',  fn: viewPreview },
+  mcp:         { title:'MCP Gateway',    fn: viewMCP },
+  analytics:   { title:'Analytics',      fn: viewAnalytics }
+};
+
+function navigate(view, params={}) {
+  S.view = view;
+  S.params = params;
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.view === view);
+  });
+  const v = VIEWS[view] || VIEWS.dashboard;
+  document.getElementById('page-title').textContent = v.title;
+  document.getElementById('content').innerHTML = v.fn(S.params);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2800);
+}
+
+// ============================================================
+// CHAT LOGIC
+// ============================================================
+function sendChat(text) {
+  if (!text.trim()) return;
+  S.chatHistory.push({ role:'user', text });
+  S.chatPhase++;
+
+  let reply = '';
+  let generateYAML = false;
+
+  if (S.chatPhase===1) {
+    if (/loan|borrow|credit|mortgage|apply/i.test(text)) {
+      reply = `Great — let's build a loan application skill.\n\nA few quick questions:\n1. What *loan types* should be supported? (Personal, Business, Vehicle…)\n2. What's the *maximum loan amount*?\n3. Which *channels* — web form, chatbot, copilot?\n\nAnswer all three and I'll generate the full manifest.`;
+    } else if (/identity|kyc|verify|id/i.test(text)) {
+      reply = `I'll build an identity verification skill for you.\n\nQuick questions:\n1. What documents should be accepted? (Passport, Driver's license…)\n2. Should this be synchronous (live scan) or async (upload + review)?\n3. GDPR data residency region?`;
+    } else if (/account|open|register|onboard/i.test(text)) {
+      reply = `Perfect — let's create an account opening skill.\n\nA few questions:\n1. Account types to support? (Current, Savings, Business)\n2. PII collected? (Name, DOB, SSN, Address)\n3. Target channels?`;
+    } else {
+      reply = `Interesting! Let me make sure I understand the experience.\n\n1. Who is the *primary user* for this experience?\n2. What *data* do they need to input?\n3. What *action* happens at the end — a form submit, a webhook, an agent handoff?`;
+    }
+  } else if (S.chatPhase===2) {
+    reply = `Perfect. Generating your skill + XD manifest now…`;
+    generateYAML = true;
+  } else {
+    reply = `The manifest is ready above. You can:\n• *Preview it* in the Preview Bench across channels\n• *Edit the YAML* directly — changes sync in real time\n• *Publish* to the XD registry when ready\n\nAnything you'd like to refine?`;
+  }
+
+  S.chatHistory.push({ role:'ai', text: reply });
+  if (generateYAML) S.generatedManifest = GENERATED_YAML;
+
+  navigate('studio');
+  // Scroll chat to bottom
+  setTimeout(()=>{
+    const msgs = document.getElementById('chat-messages');
+    if (msgs) msgs.scrollTop = msgs.scrollHeight;
+  }, 50);
+}
+
+// ============================================================
+// EVENT DELEGATION
+// ============================================================
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-action]');
+  if (!el) return;
+  e.preventDefault();
+  const action = el.dataset.action;
+  const d = el.dataset;
+
+  switch(action) {
+    case 'nav':          navigate(d.view, d); break;
+    case 'skill-detail': navigate('skill-detail', { id: d.id }); break;
+    case 'skill-filter': S.skillFilter = d.filter; navigate('skills'); break;
+    case 'preview-skill': {
+      const sk = MOCK.skills.find(s=>s.skill_id===d.id);
+      const xd = MOCK.xds.find(x=>x.implements_skill===d.id);
+      if (xd) { S.previewXD = xd.xd_id; navigate('preview'); }
+      else showToast('No XD found for this skill yet');
+      break;
+    }
+    case 'preview-xd':   S.previewXD = d.id; navigate('preview'); break;
+    case 'send-chat': {
+      const inp = document.getElementById('chat-input');
+      if (inp && inp.value.trim()) { sendChat(inp.value.trim()); inp.value=''; }
+      break;
+    }
+    case 'chat-suggest': sendChat(d.text); break;
+    case 'clear-chat':   S.chatHistory=[]; S.chatPhase=0; S.generatedManifest=null; navigate('studio'); break;
+    case 'copy-manifest':
+      if (S.generatedManifest) { navigator.clipboard?.writeText(S.generatedManifest).catch(()=>{}); showToast('✓ Manifest copied to clipboard'); }
+      break;
+    case 'mcp-tool':
+      MOCK_MCP_TOOL = d.tool;
+      S.mcpTool = d.tool;
+      S.mcpResponse = null;
+      navigate('mcp');
+      break;
+    case 'call-mcp': {
+      const tool = MOCK_MCP_TOOL || S.mcpTool;
+      const def = MCP_TOOLS[tool];
+      const params = {};
+      def.params.forEach(p => {
+        const el2 = document.getElementById('mcp-'+p.id);
+        if (el2) params[p.id] = el2.value;
+      });
+      showToast('⌘ Calling ' + tool + '…');
+      setTimeout(()=>{
+        S.mcpResponse = mcpSimulate(tool, params);
+        navigate('mcp');
+        showToast('✓ ' + tool + ' responded');
+      }, 600);
+      break;
+    }
+  }
+});
+
+// Keydown: Enter to send chat
+document.addEventListener('keydown', e => {
+  if (e.target.id==='chat-input' && e.key==='Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const v = e.target.value.trim();
+    if (v) { sendChat(v); e.target.value=''; }
+  }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+navigate('dashboard');
+</script>
+</body>
+</html>
