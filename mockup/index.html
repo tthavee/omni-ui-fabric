@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OmniUI Fabric — Platform Studio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body style="height:100vh;overflow:hidden">
+
+<div style="display:flex;height:100vh;overflow:hidden">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside style="display:flex;flex-direction:column;width:224px;flex-shrink:0;background:#0f172a;overflow:hidden">
+
+    <!-- Logo -->
+    <div style="padding:16px;border-bottom:1px solid #1e293b">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:14px;flex-shrink:0">F</div>
+        <div>
+          <div style="color:#fff;font-weight:600;font-size:13px;line-height:1.2">OmniUI Fabric</div>
+          <div style="color:#475569;font-size:11px">Platform Studio</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Org -->
+    <div style="padding:10px 12px;border-bottom:1px solid #1e293b">
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 8px;border-radius:8px;background:#1e293b;cursor:pointer">
+        <div style="width:24px;height:24px;border-radius:6px;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:11px;flex-shrink:0">A</div>
+        <div style="min-width:0;flex:1">
+          <div style="color:#fff;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Acme Bank</div>
+          <div style="color:#475569;font-size:10px">Enterprise · PCI</div>
+        </div>
+        <div style="width:7px;height:7px;border-radius:50%;background:#22c55e;flex-shrink:0" class="live-dot"></div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <nav style="flex:1;overflow-y:auto;padding:10px 10px">
+
+      <div class="nav-section">Platform</div>
+      <div class="nav-item" data-action="nav" data-view="dashboard">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </div>
+
+      <div class="nav-section">Registry</div>
+      <div class="nav-item" data-action="nav" data-view="skills">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        Skills
+        <span class="nav-badge">8</span>
+      </div>
+      <div class="nav-item" data-action="nav" data-view="xd-registry">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        XD Registry
+        <span class="nav-badge">4</span>
+      </div>
+
+      <div class="nav-section">Authoring</div>
+      <div class="nav-item" data-action="nav" data-view="studio">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        AI Studio
+      </div>
+      <div class="nav-item" data-action="nav" data-view="preview">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        Preview Bench
+      </div>
+
+      <div class="nav-section">Platform</div>
+      <div class="nav-item" data-action="nav" data-view="mcp">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        MCP Gateway
+      </div>
+      <div class="nav-item" data-action="nav" data-view="analytics">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Analytics
+      </div>
+    </nav>
+
+    <!-- User footer -->
+    <div style="padding:10px 12px;border-top:1px solid #1e293b">
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer">
+        <div style="width:28px;height:28px;border-radius:50%;background:#6366f1;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">T</div>
+        <div style="min-width:0;flex:1">
+          <div style="color:#e2e8f0;font-size:12px;font-weight:500">Taylor H.</div>
+          <div style="color:#475569;font-size:11px">Author · lending-squad</div>
+        </div>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </div>
+      <!-- Keyboard shortcut hint -->
+      <div style="margin-top:8px;padding:6px 8px;background:#1e293b;border-radius:6px;font-size:10px;color:#475569;text-align:center">
+        <span class="kbd">⌘K</span> Search &nbsp;·&nbsp; <span class="kbd">1-7</span> Navigate
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div style="flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden">
+
+    <!-- Top bar -->
+    <header style="flex-shrink:0;height:52px;background:#fff;display:flex;align-items:center;padding:0 24px;gap:12px;border-bottom:1px solid #e2e8f0">
+      <span id="page-title" style="font-size:15px;font-weight:700;color:#0f172a">Dashboard</span>
+      <div style="flex:1"></div>
+
+      <!-- Search -->
+      <button data-action="open-cmd" style="display:flex;align-items:center;gap:7px;padding:6px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;font-size:12px;color:#94a3b8;transition:border-color .15s" onmouseover="this.style.borderColor='#c7d2fe'" onmouseout="this.style.borderColor='#e2e8f0'">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search…
+        <span class="kbd">⌘K</span>
+      </button>
+
+      <!-- Runtime status -->
+      <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#64748b">
+        <span style="width:7px;height:7px;border-radius:50%;background:#22c55e;display:inline-block" class="live-dot"></span>
+        Runtime Online
+      </div>
+      <div style="font-size:11px;border:1px solid #e2e8f0;border-radius:6px;padding:3px 8px;color:#64748b;font-family:monospace">org: acme-bank</div>
+
+      <!-- Notifications -->
+      <div style="position:relative" id="notif-container">
+        <button data-action="toggle-notif" style="position:relative;width:32px;height:32px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;cursor:pointer;border-radius:7px;transition:background .12s" onmouseover="this.style.background='#f1f5f9'" onmouseout="this.style.background='transparent'">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <span id="notif-badge" class="notif-badge" style="display:none">3</span>
+        </button>
+        <div id="notif-panel" style="display:none" class="notif-panel"></div>
+      </div>
+
+      <!-- Avatar -->
+      <div style="width:28px;height:28px;border-radius:50%;background:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;cursor:pointer">T</div>
+    </header>
+
+    <!-- Page content -->
+    <main id="content" style="flex:1;overflow:auto"></main>
+  </div>
+</div>
+
+<!-- ═══ COMMAND PALETTE ═══ -->
+<div id="cmd-overlay" class="cmd-overlay" style="display:none" data-action="close-cmd-overlay">
+  <div class="cmd-palette" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:center;border-bottom:1px solid #f1f5f9">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="margin:0 14px;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="cmd-input" class="cmd-input" placeholder="Search skills, XDs, views…" autocomplete="off" oninput="updateCmdResults(this.value)" />
+      <span class="kbd" style="margin-right:14px">ESC</span>
+    </div>
+    <div id="cmd-results" style="padding:8px 0;max-height:320px;overflow-y:auto"></div>
+    <div style="padding:8px 16px;border-top:1px solid #f1f5f9;display:flex;gap:14px">
+      <span style="font-size:11px;color:#94a3b8"><span class="kbd">↑↓</span> Navigate</span>
+      <span style="font-size:11px;color:#94a3b8"><span class="kbd">↵</span> Open</span>
+      <span style="font-size:11px;color:#94a3b8"><span class="kbd">ESC</span> Close</span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="toast-el"></div>
+
+<!-- Scripts — order matters: data → runtime → views → app -->
+<script src="js/data.js"></script>
+<script src="js/runtime.js"></script>
+<script src="js/views.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
