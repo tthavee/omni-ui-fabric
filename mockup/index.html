@@ -63,19 +63,33 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         AI Studio
       </div>
+      <div class="nav-item" data-action="nav" data-view="rules-workbench">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Rules Workbench
+      </div>
       <div class="nav-item" data-action="nav" data-view="preview">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         Preview Bench
+      </div>
+      <div class="nav-item" data-action="nav" data-view="publish-console">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="16" x2="12" y2="8"/></svg>
+        Publish Console
       </div>
 
       <div class="nav-section">Platform</div>
       <div class="nav-item" data-action="nav" data-view="mcp">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         MCP Gateway
+        <span class="nav-badge">7</span>
       </div>
       <div class="nav-item" data-action="nav" data-view="analytics">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         Analytics
+      </div>
+      <div class="nav-item" data-action="nav" data-view="governance">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Governance
+        <span class="nav-badge" style="background:#fee2e2;color:#b91c1c">3</span>
       </div>
     </nav>
 
@@ -91,7 +105,7 @@
       </div>
       <!-- Keyboard shortcut hint -->
       <div style="margin-top:8px;padding:6px 8px;background:#1e293b;border-radius:6px;font-size:10px;color:#475569;text-align:center">
-        <span class="kbd">⌘K</span> Search &nbsp;·&nbsp; <span class="kbd">1-7</span> Navigate
+        <span class="kbd">⌘K</span> Search &nbsp;·&nbsp; <span class="kbd">1-9</span> Navigate
       </div>
     </div>
   </aside>
@@ -155,6 +169,24 @@
 
 <!-- Toast -->
 <div id="toast" class="toast-el"></div>
+
+<!-- ═══ JSON / YAML Viewer Drawer ═══ -->
+<div id="viewer-backdrop" onclick="FABRIC.closeViewer()"></div>
+<div id="viewer-drawer">
+  <div class="viewer-header">
+    <div style="flex:1;display:flex;align-items:center;gap:8px;min-width:0">
+      <span id="viewer-title" class="viewer-title"></span>
+      <span id="viewer-type-badge" class="viewer-type-badge viewer-type-json">JSON</span>
+    </div>
+    <span id="viewer-ln-count" class="viewer-ln-count"></span>
+    <button id="viewer-copy-btn" class="viewer-btn" onclick="FABRIC.viewerCopy()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+      Copy
+    </button>
+    <button class="viewer-close" onclick="FABRIC.closeViewer()">×</button>
+  </div>
+  <div id="viewer-content"></div>
+</div>
 
 <!-- Scripts — order matters: data → runtime → views → app -->
 <script src="js/data.js"></script>

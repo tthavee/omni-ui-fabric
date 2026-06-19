@@ -320,7 +320,29 @@ function viewSkillDetail(id) {
       </div>
     </div>
 
-    <div style="display:flex;gap:8px">
+    <!-- Version history -->
+    ${(SKILL_VERSIONS[sk.skill_id] || []).length > 0 ? `
+    <div class="card" style="padding:16px;margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:14px;font-weight:600;color:#0f172a">Version History</div>
+        <span style="font-size:11px;color:#64748b">${(SKILL_VERSIONS[sk.skill_id]||[]).length} versions</span>
+      </div>
+      ${(SKILL_VERSIONS[sk.skill_id]||[]).map((v,i) => `
+        <div class="version-row">
+          <div class="version-dot ${i===0?'current':v.status==='stable'?'stable':'depr'}"></div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+              <span style="font-size:13px;font-weight:700;font-family:monospace;color:#0f172a">v${v.version}</span>
+              ${v.breaking ? '<span style="font-size:10px;background:#fee2e2;color:#b91c1c;padding:1px 6px;border-radius:3px;font-weight:700">BREAKING</span>' : ''}
+              ${statusBadge(v.status)}
+            </div>
+            <div style="font-size:12px;color:#374151;margin-bottom:2px">${v.note}</div>
+            <div style="font-size:11px;color:#94a3b8">${v.date} · ${v.author}</div>
+          </div>
+        </div>`).join('')}
+    </div>` : ''}
+
+    <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn-primary" data-action="preview-skill" data-id="${sk.skill_id}">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         Preview in Bench
@@ -329,6 +351,16 @@ function viewSkillDetail(id) {
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         Test via MCP
       </button>
+      ${sk.status === 'draft' ? `
+      <button class="btn-secondary" style="border-color:#a16207;color:#a16207" data-action="open-publish-console" data-id="${sk.skill_id}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        Publish Console
+      </button>` : ''}
+      ${sk.status === 'staging' ? `
+      <button class="btn-secondary" style="border-color:#15803d;color:#15803d" data-action="open-publish-console" data-id="${sk.skill_id}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Promote to Production
+      </button>` : ''}
     </div>
   </div>`;
 }
@@ -419,9 +451,10 @@ function viewStudio() {
           manifest.yaml
           <span style="background:#dcfce7;color:#15803d;padding:1px 7px;border-radius:4px;font-size:10px;font-weight:700;margin-left:4px">YAML</span>
           <div style="flex:1"></div>
+          <button class="btn-ghost" style="font-size:11px;padding:3px 8px;color:#94a3b8" onclick="FABRIC.showViewer('manifest.yaml', S.generatedManifest, 'yaml')">Expand ↗</button>
           <button class="btn-ghost" style="font-size:11px;padding:3px 8px;color:#94a3b8" data-action="copy-manifest">Copy</button>
         </div>
-        <div class="code-block with-header" style="max-height:100%;overflow:auto;min-height:300px">${hlYAML(S.generatedManifest)}</div>
+        <div class="code-block with-header" style="max-height:100%;overflow:auto;min-height:300px;cursor:pointer" onclick="FABRIC.showViewer('manifest.yaml', S.generatedManifest, 'yaml')" title="Click to expand">${hlYAML(S.generatedManifest)}</div>
       </div>`
     : `<div style="height:100%;min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border:2px dashed #e2e8f0;border-radius:10px">
         <div style="font-size:36px;margin-bottom:12px">✦</div>
@@ -565,15 +598,25 @@ function viewPreview() {
     xd_id:        webResult.xd_id,
     xd_version:   webResult.xd_version,
     skill_id:     webResult.skill_id,
+    org_id:       'acme-bank',
     slots_rendered: webResult.slots.length,
     rules_applied:  webResult.rules_applied,
+    layout: {
+      type: 'form',
+      children: webResult.slots.map(s => ({
+        type: s.type, id: s.id, props: { label: s.label, required: !!s.required },
+        ...(s.type === 'button' ? { action: { action_id: s.id, endpoint: xd?.actions?.find(a=>a.action_id===s.id)?.webhook_url || '/api/webhook' } } : {})
+      }))
+    },
     meta: {
       render_ms:         webResult.render_ms,
       tokens_used:       0,
       cache_hit:         webResult.cache_hit,
-      bundle_size_bytes: webResult.bundle_size_bytes
+      bundle_size_bytes: webResult.bundle_size_bytes,
+      agui_stream_url:   `wss://fabric.acme-bank.com/stream/${webResult.session_id}`
     }
   } : {};
+  S._previewA2UI = a2uiOut;
 
   return `
   <div style="display:flex;flex-direction:column;height:100%">
@@ -687,9 +730,29 @@ function viewPreview() {
         </div>
 
         <!-- A2UI Output -->
+        <div style="padding:14px;border-bottom:1px solid #e2e8f0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+            <div style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em">A2UI Output (web)</div>
+            <button class="btn-ghost" style="font-size:10px;padding:2px 8px" onclick="FABRIC.showViewer('A2UI Output — web channel', JSON.stringify(S._previewA2UI||{}, null, 2), 'json')">Expand ↗</button>
+          </div>
+          <div class="code-block" style="font-size:10px;line-height:1.6;max-height:180px;overflow:auto;cursor:pointer" onclick="FABRIC.showViewer('A2UI Output — web channel', JSON.stringify(S._previewA2UI||{}, null, 2), 'json')" title="Click to expand">${hl(a2uiOut)}</div>
+        </div>
+
+        <!-- AG-UI Event Stream -->
         <div style="padding:14px">
-          <div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em">A2UI Output (web)</div>
-          <div class="code-block" style="font-size:10px;line-height:1.6;max-height:260px;overflow:auto">${hl(a2uiOut)}</div>
+          <div class="agui-stream">
+            <div class="agui-stream-header">
+              <span class="dot dot-green live-dot" style="width:6px;height:6px"></span>
+              AG-UI Event Stream
+              <span style="font-size:9px;color:#334155;margin-left:auto">session: ${webResult?.session_id || '—'}</span>
+            </div>
+            ${simulateAGUIEvents(S.previewXD?.replace('loan-application-web','apply-for-loan')||'apply-for-loan', webResult?.session_id||'sess_preview').map(ev => `
+              <div class="agui-event">
+                <span class="agui-event-type ${ev.cls}">${ev.type}</span>
+                <span class="agui-event-payload">${ev.payload}</span>
+              </div>`).join('')}
+          </div>
+          <div style="margin-top:8px;font-size:10px;color:#94a3b8">Simulated events · click action to see ACTION_DISPATCH</div>
         </div>
       </div>
     </div>
@@ -730,7 +793,12 @@ function viewMCP() {
   -d '{\n  "tool": "${tool}",\n${curlParams}\n}'`;
 
   const responseHtml = _mcpResponse
-    ? `<div class="code-block" style="font-size:12px;line-height:1.7;max-height:360px;overflow:auto">${hl(_mcpResponse)}</div>`
+    ? `<div style="position:relative">
+        <div style="position:absolute;top:-36px;right:0;display:flex;gap:6px">
+          <button class="btn-ghost" style="font-size:11px;padding:3px 8px;color:#94a3b8" onclick="FABRIC.showViewer('${tool} response', JSON.stringify(_mcpResponse, null, 2), 'json')">Expand ↗</button>
+        </div>
+        <div class="code-block" style="font-size:11px;line-height:1.7;max-height:380px;overflow:auto;cursor:pointer" onclick="FABRIC.showViewer('${tool} response', JSON.stringify(_mcpResponse, null, 2), 'json')" title="Click to expand">${hl(_mcpResponse)}</div>
+      </div>`
     : `<div style="min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;border:2px dashed #e2e8f0;border-radius:10px">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" stroke-width="1.5" style="margin-bottom:8px"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
         <div style="font-size:12px;color:#94a3b8">Fill params and click Execute Tool</div>
@@ -935,6 +1003,446 @@ function viewAnalytics() {
               </div>
             </div>`).join('')}
         </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Rules Workbench ──
+function viewRulesWorkbench() {
+  const xdId  = S.wbXD || 'loan-application-web';
+  const xd    = MOCK.xds.find(x => x.xd_id === xdId);
+  const ctx   = S.wbContext || { channel:'web', user_tier:'standard', locale:'en-US', device_width:1200 };
+  const simulated = S.wbSimulated;
+
+  const xdOpts = MOCK.xds.map(x =>
+    `<option value="${x.xd_id}" ${x.xd_id===xdId?'selected':''}>${x.name}</option>`).join('');
+
+  let evalResult = null;
+  if (simulated && xd) {
+    const hidden = new Set();
+    evalResult = (xd.rules || []).map(r => {
+      const fired = evalCondition(r.condition, ctx);
+      if (fired && r.patch?.hide) r.patch.hide.forEach(id => hidden.add(id));
+      return { ...r, fired };
+    });
+    S.wbHiddenSlots = hidden;
+  }
+
+  const rulesHtml = (xd?.rules || []).map(r => {
+    const fired    = evalResult ? evalResult.find(e => e.id === r.id)?.fired : null;
+    const cls      = fired === null ? '' : fired ? 'fired' : 'not-fired';
+    const iconCls  = fired === null ? 'no' : fired ? 'yes' : 'no';
+    const iconChar = fired === null ? '?' : fired ? '✓' : '×';
+    const tierMap  = { 0:'BASE', 1:'LOCALE', 2:'ROLE', 3:'ORG', 4:'CHANNEL', 5:'EMERGENCY' };
+    return `
+      <div class="rule-eval-row ${cls}">
+        <div class="rule-fire-icon ${iconCls}">${iconChar}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <span style="font-size:12px;font-weight:600;color:#374151;font-family:monospace">${r.id}</span>
+            <span class="rule-priority-badge">P${r.priority} · ${tierMap[r.priority]||''}</span>
+          </div>
+          <div style="font-size:12px;color:#64748b;margin-bottom:3px">${r.description}</div>
+          <div style="font-family:monospace;font-size:11px;color:#6366f1;background:#f0f4ff;padding:3px 7px;border-radius:4px;display:inline-block">${r.condition}</div>
+          ${fired && r.patch ? `<div style="font-size:11px;color:#16a34a;margin-top:4px">Patch: ${JSON.stringify(r.patch)}</div>` : ''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          ${fired === null ? '<span style="font-size:11px;color:#94a3b8">—</span>' :
+            fired ? '<span style="font-size:11px;color:#15803d;font-weight:600">FIRED</span>' :
+                    '<span style="font-size:11px;color:#94a3b8">SKIP</span>'}
+        </div>
+      </div>`;
+  }).join('');
+
+  const slotsHtml = simulated && xd ? (xd.slots || []).map(s => {
+    const visible = !(S.wbHiddenSlots || new Set()).has(s.id);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #f1f5f9">
+      <span style="font-size:10px;font-family:monospace;color:#374151;flex:1">${s.id}</span>
+      <span style="font-size:11px;font-weight:600;${visible?'color:#15803d':'color:#ef4444'}">${visible?'✓ visible':'✗ hidden'}</span>
+      <span style="font-size:10px;background:#f8fafc;border:1px solid #e2e8f0;color:#64748b;padding:1px 5px;border-radius:3px">${s.type}</span>
+    </div>`;
+  }).join('') : `<div style="font-size:12px;color:#94a3b8;padding:12px 0">Run simulation to see slot visibility</div>`;
+
+  const firedCount = evalResult ? evalResult.filter(e => e.fired).length : 0;
+  const ruleCount  = xd?.rules?.length || 0;
+
+  return `
+  <div style="display:flex;flex-direction:column;height:100%">
+    <!-- Header -->
+    <div style="padding:14px 24px;border-bottom:1px solid #e2e8f0;background:#fff;flex-shrink:0;display:flex;align-items:center;gap:12px">
+      <div style="flex:1">
+        <h1 style="font-size:16px;font-weight:700;color:#0f172a">Rules Workbench</h1>
+        <p style="font-size:12px;color:#64748b;margin-top:1px">Simulate rule evaluation against any context — see which slots appear or hide</p>
+      </div>
+      <select style="border:1px solid #e2e8f0;border-radius:7px;padding:6px 28px 6px 10px;font-size:13px;background:#fff;outline:none" onchange="S.wbXD=this.value;S.wbSimulated=false;FABRIC.navigate('rules-workbench')">${xdOpts}</select>
+      <button class="btn-primary" style="font-size:12px" data-action="run-wb-sim">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run Simulation
+      </button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:300px 1fr;flex:1;overflow:hidden">
+
+      <!-- Left: Context simulator -->
+      <div class="wb-pane" style="padding:16px">
+        <div style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px">Context Simulator</div>
+
+        <div class="wb-sim-group">
+          <label class="wb-sim-label">Channel</label>
+          <select style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;background:#fff;outline:none" onchange="if(!S.wbContext)S.wbContext={channel:'web',user_tier:'standard',locale:'en-US',device_width:1200};S.wbContext.channel=this.value;S.wbSimulated=false">
+            ${['web','chatbot','copilot','mobile','portal'].map(c => `<option ${ctx.channel===c?'selected':''}>${c}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="wb-sim-group">
+          <label class="wb-sim-label">User Tier</label>
+          <select style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;background:#fff;outline:none" onchange="if(!S.wbContext)S.wbContext={channel:'web',user_tier:'standard',locale:'en-US',device_width:1200};S.wbContext.user_tier=this.value;S.wbSimulated=false">
+            ${['standard','premium'].map(t => `<option ${ctx.user_tier===t?'selected':''}>${t}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="wb-sim-group">
+          <label class="wb-sim-label">Locale</label>
+          <select style="width:100%;border:1px solid #d1d5db;border-radius:6px;padding:7px 10px;font-size:13px;background:#fff;outline:none" onchange="if(!S.wbContext)S.wbContext={channel:'web',user_tier:'standard',locale:'en-US',device_width:1200};S.wbContext.locale=this.value;S.wbSimulated=false">
+            ${['en-US','en-GB','fr-FR','de-DE'].map(l => `<option ${ctx.locale===l?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+
+        <div class="wb-sim-group">
+          <label class="wb-sim-label">Device Width: <strong>${ctx.device_width}px</strong></label>
+          <div class="wb-range-row">
+            <span style="font-size:10px;color:#94a3b8">320</span>
+            <input type="range" min="320" max="1920" value="${ctx.device_width}" style="flex:1"
+              oninput="if(!S.wbContext)S.wbContext={channel:'web',user_tier:'standard',locale:'en-US',device_width:1200};S.wbContext.device_width=parseInt(this.value);S.wbSimulated=false;this.previousElementSibling.nextElementSibling.previousElementSibling.innerHTML='Device Width: <strong>'+this.value+'px</strong>'" />
+            <span style="font-size:10px;color:#94a3b8">1920</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px">
+            ${['Mobile<br>320', 'Tablet<br>768', 'Desktop<br>1200', 'Wide<br>1920'].map((l,i) => {
+              const w = [320,768,1200,1920][i];
+              return `<button style="font-size:9px;color:#6366f1;border:1px solid #c7d2fe;background:#f0f4ff;border-radius:4px;padding:2px 6px;cursor:pointer;line-height:1.3" onclick="if(!S.wbContext)S.wbContext={};S.wbContext.device_width=${w};S.wbSimulated=false;FABRIC.navigate('rules-workbench')">${l}</button>`;
+            }).join('')}
+          </div>
+        </div>
+
+        ${simulated ? `
+        <div style="margin-top:16px;padding:12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px">
+          <div style="font-size:11px;font-weight:700;color:#15803d;margin-bottom:6px">${firedCount} of ${ruleCount} rules fired</div>
+          <div style="font-size:11px;color:#16a34a">CEL context:</div>
+          <div style="font-family:monospace;font-size:10px;color:#374151;margin-top:4px;line-height:1.6">
+            channel = "${ctx.channel}"<br>
+            user_tier = "${ctx.user_tier}"<br>
+            locale = "${ctx.locale}"<br>
+            device_width = ${ctx.device_width}
+          </div>
+        </div>` : `
+        <div style="margin-top:16px;padding:12px;background:#f8fafc;border:2px dashed #e2e8f0;border-radius:8px;text-align:center">
+          <div style="font-size:12px;color:#94a3b8">Set context above, then click<br><strong style="color:#6366f1">Run Simulation</strong></div>
+        </div>`}
+      </div>
+
+      <!-- Right: Rule evaluations + slot matrix -->
+      <div style="display:flex;flex-direction:column;overflow:hidden">
+        <div style="display:grid;grid-template-columns:1fr 240px;flex:1;overflow:hidden">
+
+          <!-- Rule evaluations -->
+          <div style="overflow:auto;padding:0;border-right:1px solid #e2e8f0">
+            <div style="padding:12px 14px;border-bottom:1px solid #e2e8f0;background:#f8fafc;display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em">Rule Evaluation</span>
+              ${simulated ? `<span style="font-size:11px;padding:3px 8px;background:${firedCount?'#dcfce7':'#f1f5f9'};color:${firedCount?'#15803d':'#64748b'};border-radius:5px;font-weight:600">${firedCount}/${ruleCount} fired</span>` : '<span style="font-size:11px;color:#94a3b8">not simulated</span>'}
+            </div>
+            ${ruleCount ? rulesHtml : '<div style="padding:24px;text-align:center;color:#9ca3af;font-size:13px">No rules defined for this XD</div>'}
+          </div>
+
+          <!-- Slot visibility matrix -->
+          <div style="overflow:auto;background:#f8fafc;padding:14px">
+            <div style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Slot Visibility</div>
+            ${slotsHtml}
+            ${simulated && xd ? `
+            <div style="margin-top:12px;padding:8px;background:#fff;border:1px solid #e2e8f0;border-radius:6px">
+              <div style="font-size:10px;color:#64748b;font-weight:600">SUMMARY</div>
+              <div style="font-size:13px;font-weight:700;color:#0f172a;margin-top:2px">${(xd.slots.length - (S.wbHiddenSlots?.size||0))} visible · ${S.wbHiddenSlots?.size||0} hidden</div>
+            </div>` : ''}
+          </div>
+        </div>
+
+        <!-- CEL output panel -->
+        <div style="padding:12px 14px;border-top:1px solid #e2e8f0;background:#fff;flex-shrink:0">
+          <div style="font-size:11px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">CEL Expression Builder</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            ${['channel == "chatbot"','user_tier == "premium"','locale == "en-GB"','device_width < 500','amount > 1000'].map(expr =>
+              `<button style="font-size:11px;font-family:monospace;background:#f0f4ff;color:#4f46e5;border:1px solid #c7d2fe;border-radius:5px;padding:4px 9px;cursor:pointer" onclick="FABRIC.toast('Condition: ${expr.replace(/"/g, "'")}')">${expr}</button>`
+            ).join('')}
+            <span style="font-size:11px;color:#94a3b8;align-self:center">Combine with <span style="font-family:monospace;background:#f8fafc;padding:1px 5px;border-radius:3px">&&</span> or <span style="font-family:monospace;background:#f8fafc;padding:1px 5px;border-radius:3px">||</span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── Publish Console ──
+function viewPublishConsole() {
+  const xdId   = S.pubXD || 'loan-application-web';
+  const xd     = MOCK.xds.find(x => x.xd_id === xdId);
+  const skill  = MOCK.skills.find(s => s.skill_id === xd?.implements_skill);
+  const checks = S.pubChecks || [];
+  const stage  = S.pubStage || (xd?.status === 'stable' ? 'production' : xd?.status === 'staging' ? 'staging' : 'draft');
+
+  const xdOpts = MOCK.xds.map(x =>
+    `<option value="${x.xd_id}" ${x.xd_id===xdId?'selected':''}>${x.name}</option>`).join('');
+
+  const stages = [
+    { id:'draft',      label:'Draft',      icon:'✎',  done: true, current: stage==='draft' },
+    { id:'staging',    label:'Staging',    icon:'🔬', done: stage==='staging'||stage==='production', current: stage==='staging' },
+    { id:'production', label:'Production', icon:'🚀', done: stage==='production', current: stage==='production' }
+  ];
+
+  const stageHtml = stages.map(s =>
+    `<div class="pub-stage ${s.done&&!s.current?'done':''} ${s.current?'current':''}">
+      <span class="pub-stage-icon">${s.done&&!s.current?'✓':s.icon}</span>
+      <span>${s.label}</span>
+    </div>`).join('');
+
+  const checksHtml = checks.length ? checks.map(c => {
+    const iconMap = { pass:'✓', warn:'!', fail:'✗', run:'…' };
+    const clsMap  = { pass:'pci-pass', warn:'pci-warn', fail:'pci-fail', run:'pci-run' };
+    return `
+      <div class="pub-check-item">
+        <div class="pub-check-icon ${clsMap[c.status]||'pci-run'}">${iconMap[c.status]||'?'}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;color:#0f172a">${c.label}</div>
+          <div style="font-size:12px;color:#64748b;margin-top:2px">${c.detail}</div>
+        </div>
+        <span style="font-size:11px;font-weight:600;flex-shrink:0;${c.status==='pass'?'color:#15803d':c.status==='warn'?'color:#a16207':'color:#b91c1c'}">${c.status.toUpperCase()}</span>
+      </div>`;
+  }).join('') : `
+    <div style="text-align:center;padding:32px;background:#f8fafc;border:2px dashed #e2e8f0;border-radius:8px">
+      <div style="font-size:13px;color:#94a3b8;margin-bottom:10px">Run automated checks to see validation results</div>
+      <button class="btn-primary" style="font-size:12px" data-action="run-pub-checks">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        Run Automated Checks
+      </button>
+    </div>`;
+
+  const passed = checks.filter(c => c.status === 'pass').length;
+  const warned = checks.filter(c => c.status === 'warn').length;
+  const failed = checks.filter(c => c.status === 'fail').length;
+  const canPromote = checks.length > 0 && failed === 0;
+
+  const approvalHtml = checks.length > 0 ? `
+    <div class="card" style="padding:16px;margin-bottom:12px">
+      <div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:14px">Human Approval</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        ${[['Taylor H.','Author','signed off','12:43',true],['Jordan K.','Org Admin','pending approval','—',false]].map(([name,role,status,time,done]) =>
+          `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:${done?'#f0fdf4':'#f8fafc'};border:1px solid ${done?'#bbf7d0':'#e2e8f0'};border-radius:8px">
+            <div style="width:32px;height:32px;border-radius:50%;background:${done?'#22c55e':'#e2e8f0'};display:flex;align-items:center;justify-content:center;font-weight:700;color:${done?'#fff':'#94a3b8'};font-size:13px;flex-shrink:0">${name[0]}</div>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:#0f172a">${name}</div>
+              <div style="font-size:11px;color:#64748b">${role}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-size:12px;font-weight:600;color:${done?'#15803d':'#94a3b8'}">${done?'✓ ':''} ${status}</div>
+              <div style="font-size:11px;color:#94a3b8">${time}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  return `
+  <div style="padding:24px;max-width:900px" class="view-enter">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <h1 style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.02em">Publish Console</h1>
+          <select style="border:1px solid #e2e8f0;border-radius:7px;padding:5px 28px 5px 10px;font-size:13px;background:#fff;outline:none" onchange="S.pubXD=this.value;S.pubChecks=[];S.pubStage=null;FABRIC.navigate('publish-console')">${xdOpts}</select>
+        </div>
+        ${xd ? `<p style="font-size:13px;color:#64748b;margin-top:4px">${xd.name} · v${xd.version} · team: ${xd.owner_team}</p>` : ''}
+      </div>
+      ${checks.length > 0 ? `
+        <div style="display:flex;gap:8px">
+          <div style="padding:6px 12px;border-radius:7px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:12px;color:#15803d;font-weight:600">${passed} passed</div>
+          ${warned ? `<div style="padding:6px 12px;border-radius:7px;background:#fef9c3;border:1px solid #fde68a;font-size:12px;color:#a16207;font-weight:600">${warned} warnings</div>` : ''}
+          ${failed ? `<div style="padding:6px 12px;border-radius:7px;background:#fee2e2;border:1px solid #fca5a5;font-size:12px;color:#b91c1c;font-weight:600">${failed} failed</div>` : ''}
+        </div>` : ''}
+    </div>
+
+    <!-- Pipeline stages -->
+    <div class="pub-stages">${stageHtml}</div>
+
+    <div style="display:grid;grid-template-columns:1fr 300px;gap:16px">
+      <div>
+        <!-- Automated checks -->
+        <div class="card" style="padding:16px;margin-bottom:12px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-size:14px;font-weight:600;color:#0f172a">Automated Checks</div>
+            ${checks.length > 0 ? `<button class="btn-ghost" style="font-size:12px" data-action="run-pub-checks">Re-run</button>` :
+              `<button class="btn-secondary" style="font-size:12px" data-action="run-pub-checks">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+                Run Checks
+              </button>`}
+          </div>
+          ${checksHtml}
+        </div>
+
+        <!-- Changelog -->
+        <div class="card" style="padding:16px;margin-bottom:12px">
+          <div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:10px">Version Changelog</div>
+          <div style="margin-bottom:10px">
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              ${['patch','minor','major'].map(t =>
+                `<button class="tab ${(S.pubBumpType||'patch')===t?'active':''}" onclick="S.pubBumpType='${t}';FABRIC.navigate('publish-console')" style="font-size:11px">${t.toUpperCase()}</button>`
+              ).join('')}
+              <span style="font-size:12px;color:#64748b;align-self:center">
+                ${xd ? `v${xd.version} → v${bumpVersion(xd.version, S.pubBumpType||'patch')}` : ''}
+              </span>
+            </div>
+          </div>
+          <textarea id="pub-changelog" rows="3" placeholder="Describe what changed in this version…"
+            style="width:100%;border:1px solid #d1d5db;border-radius:7px;padding:8px 12px;font-size:13px;resize:none;outline:none;transition:border-color .15s;box-sizing:border-box"
+            onfocus="this.style.borderColor='#6366f1'" onblur="this.style.borderColor='#d1d5db'">
+          </textarea>
+        </div>
+
+        <!-- Promote buttons -->
+        <div style="display:flex;gap:10px">
+          <button class="btn-secondary" style="flex:1" data-action="promote-to-staging" ${canPromote?'':'disabled style="opacity:.4;cursor:not-allowed;pointer-events:none"'}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+            Promote to Staging
+          </button>
+          <button class="btn-primary" style="flex:1" data-action="promote-to-production" ${canPromote&&stage==='staging'?'':'disabled style="opacity:.4;cursor:not-allowed;pointer-events:none"'}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Promote to Production
+          </button>
+        </div>
+      </div>
+
+      <!-- Right sidebar -->
+      <div>
+        ${approvalHtml}
+
+        <div class="card" style="padding:16px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:12px">XD Info</div>
+          ${xd ? [
+            ['XD ID',    `<span class="code" style="color:#6366f1;font-size:11px">${xd.xd_id}</span>`],
+            ['Skill',    skill?.name || xd.implements_skill],
+            ['Version',  `v${xd.version}`],
+            ['Template', xd.template_id],
+            ['Channels', xd.channels.map(channelPill).join('')],
+            ['Status',   statusBadge(xd.status)]
+          ].map(([k,v]) =>
+            `<div style="display:flex;gap:8px;margin-bottom:8px;font-size:12px">
+              <div style="color:#64748b;width:70px;flex-shrink:0">${k}</div>
+              <div style="color:#0f172a;flex:1">${v}</div>
+            </div>`).join('') : ''}
+        </div>
+
+        ${skill?.compliance_tags?.length ? `
+        <div class="card" style="padding:16px">
+          <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:10px">Compliance Tags</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${skill.compliance_tags.map(t => `<span style="font-size:11px;background:#fef9c3;color:#854d0e;padding:3px 9px;border-radius:5px;font-weight:600">${t}</span>`).join('')}
+          </div>
+          <div style="font-size:11px;color:#64748b;margin-top:10px">These tags trigger compliance gate checks before promotion.</div>
+        </div>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// helper used by Publish Console
+function bumpVersion(ver, type) {
+  const [maj,min,pat] = (ver||'1.0.0').split('.').map(Number);
+  if (type === 'major') return `${maj+1}.0.0`;
+  if (type === 'minor') return `${maj}.${min+1}.0`;
+  return `${maj}.${min}.${pat+1}`;
+}
+
+// ── Governance ──
+function viewGovernance() {
+  const enforcementOrder = ['blocking','warning','audit'];
+  const grouped = {};
+  COMPLIANCE_RULES.forEach(r => {
+    if (!grouped[r.enforcement]) grouped[r.enforcement] = [];
+    grouped[r.enforcement].push(r);
+  });
+  const totalBlocking = (grouped.blocking||[]).length;
+  const totalWarning  = (grouped.warning||[]).length;
+  const totalAudit    = (grouped.audit||[]).length;
+
+  return `
+  <div style="padding:24px;max-width:1000px" class="view-enter">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px">
+      <div>
+        <h1 style="font-size:20px;font-weight:800;color:#0f172a;letter-spacing:-.02em">Governance</h1>
+        <p style="font-size:13px;color:#64748b;margin-top:2px">Compliance rules applied to all XDs at publish time · org: acme-bank</p>
+      </div>
+      <div style="display:flex;gap:8px">
+        <div style="padding:6px 12px;border-radius:7px;background:#fee2e2;border:1px solid #fca5a5;font-size:12px;color:#b91c1c;font-weight:600">${totalBlocking} blocking</div>
+        <div style="padding:6px 12px;border-radius:7px;background:#fef9c3;border:1px solid #fde68a;font-size:12px;color:#a16207;font-weight:600">${totalWarning} warnings</div>
+        <div style="padding:6px 12px;border-radius:7px;background:#f0f4ff;border:1px solid #c7d2fe;font-size:12px;color:#4f46e5;font-weight:600">${totalAudit} audit</div>
+      </div>
+    </div>
+
+    <!-- Summary card -->
+    <div class="card" style="padding:16px;margin-bottom:20px;background:linear-gradient(135deg,#f8fafc,#f0f4ff);border-color:#e0e7ff">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px">
+        ${[
+          ['Rules Active',      COMPLIANCE_RULES.length, '#0f172a'],
+          ['Blocking',          totalBlocking,            '#b91c1c'],
+          ['Skills Governed',   [...new Set(COMPLIANCE_RULES.flatMap(r=>r.skills_affected))].length, '#4f46e5'],
+          ['Channels Covered',  [...new Set(COMPLIANCE_RULES.flatMap(r=>r.applies_to))].length, '#15803d']
+        ].map(([l,v,c]) =>
+          `<div style="text-align:center">
+            <div style="font-size:28px;font-weight:800;color:${c};letter-spacing:-.02em">${v}</div>
+            <div style="font-size:11px;color:#64748b;font-weight:500;margin-top:2px">${l}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    ${enforcementOrder.filter(e => grouped[e]).map(enforcement => {
+      const clsMap = { blocking:'cb-blocking', warning:'cb-warning', audit:'cb-audit' };
+      const rules = grouped[enforcement];
+      return `
+      <div class="card" style="padding:16px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <span class="compliance-badge ${clsMap[enforcement]}">${enforcement}</span>
+          <span style="font-size:14px;font-weight:600;color:#0f172a">${enforcement === 'blocking' ? 'Blocking Rules — prevent publish if violated' : enforcement === 'warning' ? 'Warnings — surface in console but allow publish' : 'Audit Only — logged for compliance records'}</span>
+        </div>
+        ${rules.map(r => `
+          <div class="compliance-row">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                <span style="font-size:13px;font-weight:600;color:#0f172a">${r.name}</span>
+                <span class="reg-tag">${r.regulation}</span>
+                <span style="font-family:monospace;font-size:10px;color:#94a3b8">${r.rule_id}</span>
+              </div>
+              <div style="font-size:13px;color:#374151;margin-bottom:6px">${r.description}</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap">
+                <span style="font-size:11px;color:#64748b">Channels:</span>
+                ${r.applies_to.map(c => channelPill(c)).join('')}
+                ${r.skills_affected.length ? `
+                  <span style="font-size:11px;color:#64748b;margin-left:6px">Skills:</span>
+                  ${r.skills_affected.map(s => `<span style="font-size:11px;font-family:monospace;background:#f0f4ff;color:#6366f1;padding:1px 6px;border-radius:4px">${s}</span>`).join('')}
+                ` : ''}
+              </div>
+            </div>
+          </div>`).join('')}
+      </div>`;
+    }).join('')}
+
+    <div class="card" style="padding:16px;background:#f8fafc">
+      <div style="font-size:13px;font-weight:600;color:#0f172a;margin-bottom:10px">How Governance Works</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+        ${[
+          ['1. Author publishes','Publish Console runs automated checks against all compliance rules for the XD\'s declared channels and skill tags.'],
+          ['2. Gate enforces','Blocking rules prevent promotion if violated. Warnings are surfaced for human review. Audit rules log silently.'],
+          ['3. Runtime enforces','At render time, the runtime engine ensures only channel-appropriate slots render, preventing accidental PII exposure.']
+        ].map(([t,d]) =>
+          `<div style="padding:12px;background:#fff;border-radius:8px;border:1px solid #e2e8f0">
+            <div style="font-size:12px;font-weight:700;color:#4f46e5;margin-bottom:5px">${t}</div>
+            <div style="font-size:12px;color:#64748b;line-height:1.5">${d}</div>
+          </div>`).join('')}
       </div>
     </div>
   </div>`;

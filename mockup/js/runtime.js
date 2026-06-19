@@ -247,6 +247,111 @@ function mcpSimulate(tool, params) {
   return { error:'Unknown tool' };
 }
 
+// ── AG-UI Event Stream Simulation (spec §3) ──
+function simulateAGUIEvents(skillId, sessionId, action) {
+  const sk = MOCK.skills.find(s => s.skill_id === skillId) || MOCK.skills[0];
+  const tcId = 'tc_' + Math.random().toString(36).slice(2, 8);
+  const msgId = 'msg_' + Math.random().toString(36).slice(2, 8);
+  const now = Date.now();
+  const events = [
+    { type:'RUN_STARTED',        ts: now,      cls:'agui-start',  payload: `{"session_id":"${sessionId}","org_id":"acme-bank"}` },
+    { type:'TEXT_MESSAGE_START', ts: now+8,    cls:'agui-start',  payload: `{"message_id":"${msgId}","role":"assistant"}` },
+    { type:'TOOL_CALL_START',    ts: now+18,   cls:'agui-tool',   payload: `{"tool":"execute_skill","skill_id":"${skillId}"}` },
+    { type:'STATE_SNAPSHOT',     ts: now+26,   cls:'agui-patch',  payload: `{"slots":${MOCK.xds.find(x=>x.implements_skill===skillId)?.slots.length||5},"rules_applied":[],"render_ms":3.2,"cache_hit":true}` },
+    { type:'TEXT_MESSAGE_CHUNK', ts: now+38,   cls:'agui-chunk',  payload: `{"delta":"Here's your ${sk.name.toLowerCase()} form. "}` },
+    { type:'TEXT_MESSAGE_CHUNK', ts: now+52,   cls:'agui-chunk',  payload: `{"delta":"Please fill in the details below."}` },
+    { type:'TOOL_CALL_END',      ts: now+58,   cls:'agui-tool',   payload: `{"tool_call_id":"${tcId}","tokens_used":0,"render_ms":3.2}` },
+    { type:'TEXT_MESSAGE_END',   ts: now+64,   cls:'agui-end',    payload: `{"message_id":"${msgId}","finish_reason":"stop"}` },
+  ];
+  if (action) {
+    events.push({ type:'ACTION_DISPATCH', ts: now+120, cls:'agui-action', payload: `{"action_id":"${action}","webhook_status":202,"dispatch_ms":6.1}` });
+    events.push({ type:'RUN_FINISHED',    ts: now+128, cls:'agui-end',   payload: `{"session_id":"${sessionId}","total_ms":128}` });
+  } else {
+    events.push({ type:'RUN_FINISHED',    ts: now+70,  cls:'agui-end',   payload: `{"session_id":"${sessionId}","total_ms":70}` });
+  }
+  return events;
+}
+
+// ── XD Validation for Publish Console (spec §10.5) ──
+function validateXD(xdId) {
+  const xd = MOCK.xds.find(x => x.xd_id === xdId);
+  if (!xd) return [];
+  const templateOk = MOCK.templates.some(t => t.template_id === xd.template_id);
+  const skill = MOCK.skills.find(s => s.skill_id === xd.implements_skill);
+  const boundSlots = xd.slots.filter(s => s.bind);
+  const badBindings = boundSlots.filter(s => !s.bind.startsWith('$.'));
+  const actionWebhooks = xd.actions.filter(a => a.webhook_url);
+  const hasConsent = xd.slots.some(s => s.type === 'checkbox' && s.id.includes('consent'));
+  const piiRequired = (skill?.compliance_tags || []).includes('PCI-DSS') || (skill?.compliance_tags || []).includes('GDPR');
+  return [
+    { id:'schema',     label:'XD schema valid',           status:'pass', detail:`${xd.slots.length} slots · ${xd.rules.length} rules · ${xd.actions.length} actions` },
+    { id:'template',   label:'Template resolved',          status: templateOk ? 'pass' : 'fail', detail: xd.template_id + (templateOk ? ' ✓' : ' — not found in registry') },
+    { id:'bindings',   label:'Slot bind paths valid',      status: badBindings.length === 0 ? 'pass' : 'warn', detail: `${boundSlots.length} bound paths · ${badBindings.length} warnings` },
+    { id:'actions',    label:'Action webhooks declared',   status: actionWebhooks.length > 0 ? 'pass' : 'warn', detail: `${actionWebhooks.length}/${xd.actions.length} with webhook_url` },
+    { id:'wcag',       label:'WCAG 2.1 AA baseline',      status: 'warn', detail: '1 contrast warning on metric-display (ratio 3.8:1 < 4.5:1)' },
+    { id:'compliance', label:'Compliance gate clear',      status: (!piiRequired || hasConsent) ? 'pass' : 'fail', detail: (skill?.compliance_tags||[]).join(', ') || 'none declared' },
+    { id:'breaking',   label:'No breaking changes vs prev',status: 'pass', detail: `Same slot/action signatures as v${xd.version}` }
+  ];
+}
+
+// ── Extended MCP Simulate ──
+const _mcpSimulateOrig = mcpSimulate;
+function mcpSimulate(tool, params) {
+  const p = params;
+  if (tool === 'create_experience_definition') {
+    const channels = (p.channels || 'web,chatbot').split(',').map(c => c.trim());
+    const xdId = (p.xd_name || 'new-xd').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'');
+    return {
+      status: 'created',
+      xd_id: xdId,
+      org_id: p.org_id || 'acme-bank',
+      skill_id: p.skill_id || 'apply-for-loan',
+      name: p.xd_name || 'New XD',
+      template_id: p.template_id || 'sys:single-step-form',
+      version: '0.1.0',
+      status_tag: 'draft',
+      channels,
+      slots_scaffold: ['text-input','currency-input','button'].map((t,i) => ({ id:`field-${i+1}`, type:t, label:`Field ${i+1}`, required:true })),
+      next: `Validate with validate_experience_definition, then publish when ready.`,
+      created_ms: +(Math.random()*8+4).toFixed(1)
+    };
+  }
+  if (tool === 'validate_experience_definition') {
+    const checks = validateXD(p.xd_id || 'loan-application-web');
+    const passed = checks.filter(c => c.status === 'pass').length;
+    const warned = checks.filter(c => c.status === 'warn').length;
+    const failed = checks.filter(c => c.status === 'fail').length;
+    return {
+      xd_id: p.xd_id || 'loan-application-web',
+      org_id: p.org_id || 'acme-bank',
+      strict: p.strict === 'true',
+      overall: failed > 0 ? 'FAIL' : warned > 0 ? 'WARN' : 'PASS',
+      checks,
+      summary: { passed, warned, failed },
+      validate_ms: +(Math.random()*12+6).toFixed(1)
+    };
+  }
+  if (tool === 'subscribe_to_actions') {
+    const sessId = p.session_id || 'sess_abc123';
+    const streamUrl = `https://fabric.acme-bank.com/stream/${sessId}/actions`;
+    return {
+      status: 'subscribed',
+      session_id: sessId,
+      xd_id: p.xd_id || 'loan-application-web',
+      transport: p.transport || 'sse',
+      stream_url: streamUrl,
+      initial_snapshot: {
+        slots_rendered: 5,
+        rules_applied: [],
+        render_ms: 3.2,
+        cache_hit: true
+      },
+      example_event: { type:'ACTION_DISPATCH', action_id:'submit', session_id:sessId, webhook_status:202 }
+    };
+  }
+  return _mcpSimulateOrig(tool, params);
+}
+
 // ── Format helpers ──
 function fmtMs(ms) {
   if (ms === null || ms === undefined) return '—';

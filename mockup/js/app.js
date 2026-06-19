@@ -12,6 +12,7 @@ const S = {
   previewTier:        'standard',
   previewLocale:      'en-US',
   previewDeviceWidth: 1200,
+  _previewA2UI:       null,
   // Studio
   chatHistory: [],
   chatPhase:   0,
@@ -19,15 +20,28 @@ const S = {
   manifestValidated: false,
   // Skills
   skillSearch: '',
-  skillFilter: 'all'
+  skillFilter: 'all',
+  // Rules Workbench
+  wbXD:        'loan-application-web',
+  wbContext:   { channel:'web', user_tier:'standard', locale:'en-US', device_width:1200 },
+  wbSimulated: false,
+  wbHiddenSlots: new Set(),
+  // Publish Console
+  pubXD:       'loan-application-web',
+  pubChecks:   [],
+  pubStage:    null,
+  pubBumpType: 'patch'
 };
 
 // ── Public API (called from inline handlers) ──
 const FABRIC = {
   navigate,
-  toast: showToast,
+  toast:                 showToast,
   updatePreviewComputed,
-  updatePreviewSlider
+  updatePreviewSlider,
+  showViewer,
+  closeViewer,
+  viewerCopy
 };
 
 // ── Live ticker ──
@@ -117,6 +131,52 @@ function updatePreviewSlider(input) {
   if (label) label.textContent = input.value + ' months';
 }
 
+// ── JSON / YAML Viewer Drawer ──
+let _viewerRaw = '';
+
+function _renderViewerLines(raw, type) {
+  let highlighted;
+  if (type === 'yaml')     highlighted = hlYAML(raw);
+  else if (type === 'json') highlighted = hl(JSON.parse(raw));
+  else                      highlighted = escHtml(raw);
+
+  return highlighted.split('\n').map((line, i) =>
+    `<div class="viewer-line"><span class="viewer-ln">${i + 1}</span><span class="viewer-code-line">${line || ' '}</span></div>`
+  ).join('');
+}
+
+function showViewer(title, content, type = 'json') {
+  _viewerRaw = content;
+  const drawer   = document.getElementById('viewer-drawer');
+  const backdrop = document.getElementById('viewer-backdrop');
+
+  document.getElementById('viewer-title').textContent = title;
+
+  const badge = document.getElementById('viewer-type-badge');
+  badge.textContent = type.toUpperCase();
+  badge.className = 'viewer-type-badge viewer-type-' + type;
+
+  const lines = content.split('\n');
+  document.getElementById('viewer-ln-count').textContent = lines.length + ' lines';
+
+  document.getElementById('viewer-content').innerHTML = _renderViewerLines(content, type);
+
+  backdrop.classList.add('open');
+  drawer.classList.add('open');
+}
+
+function closeViewer() {
+  document.getElementById('viewer-drawer')?.classList.remove('open');
+  document.getElementById('viewer-backdrop')?.classList.remove('open');
+}
+
+function viewerCopy() {
+  navigator.clipboard.writeText(_viewerRaw).then(() => {
+    const btn = document.getElementById('viewer-copy-btn');
+    if (btn) { const orig = btn.textContent; btn.textContent = 'Copied!'; setTimeout(() => btn.textContent = orig, 1800); }
+  }).catch(() => showToast('Copy not available', 'error'));
+}
+
 // ── Navigation ──
 function navigate(view, params = {}) {
   stopTicker();
@@ -128,14 +188,17 @@ function navigate(view, params = {}) {
   });
 
   const views = {
-    dashboard:      { title:'Dashboard',      fn: viewDashboard },
-    skills:         { title:'Skill Registry', fn: viewSkills },
-    'skill-detail': { title:'Skill Detail',   fn: () => viewSkillDetail(S.params.id) },
-    'xd-registry':  { title:'XD Registry',    fn: viewXDRegistry },
-    studio:         { title:'AI Studio',      fn: viewStudio },
-    preview:        { title:'Preview Bench',  fn: viewPreview },
-    mcp:            { title:'MCP Gateway',    fn: viewMCP },
-    analytics:      { title:'Analytics',      fn: viewAnalytics }
+    dashboard:          { title:'Dashboard',          fn: viewDashboard },
+    skills:             { title:'Skill Registry',     fn: viewSkills },
+    'skill-detail':     { title:'Skill Detail',       fn: () => viewSkillDetail(S.params.id) },
+    'xd-registry':      { title:'XD Registry',        fn: viewXDRegistry },
+    studio:             { title:'AI Studio',           fn: viewStudio },
+    'rules-workbench':  { title:'Rules Workbench',    fn: viewRulesWorkbench },
+    preview:            { title:'Preview Bench',      fn: viewPreview },
+    'publish-console':  { title:'Publish Console',    fn: viewPublishConsole },
+    mcp:                { title:'MCP Gateway',        fn: viewMCP },
+    analytics:          { title:'Analytics',          fn: viewAnalytics },
+    governance:         { title:'Governance',         fn: viewGovernance }
   };
 
   const v = views[view] || views.dashboard;
@@ -281,13 +344,16 @@ function updateCmdResults(q) {
   if (!q) {
     // Show nav items
     _cmdItems = [
-      { icon:'⊞', label:'Dashboard',      sub:'Platform overview', action:() => navigate('dashboard') },
-      { icon:'⚙',  label:'Skill Registry', sub:'Browse all skills', action:() => navigate('skills') },
-      { icon:'📄', label:'XD Registry',    sub:'Experience definitions', action:() => navigate('xd-registry') },
-      { icon:'✦',  label:'AI Studio',      sub:'Generate manifests', action:() => navigate('studio') },
-      { icon:'▣',  label:'Preview Bench',  sub:'3-channel render preview', action:() => navigate('preview') },
-      { icon:'⌘',  label:'MCP Gateway',    sub:'Test MCP tool calls', action:() => navigate('mcp') },
-      { icon:'📈', label:'Analytics',       sub:'Render telemetry', action:() => navigate('analytics') }
+      { icon:'⊞', label:'Dashboard',          sub:'Platform overview',           action:() => navigate('dashboard') },
+      { icon:'⚙',  label:'Skill Registry',     sub:'Browse all skills',           action:() => navigate('skills') },
+      { icon:'📄', label:'XD Registry',         sub:'Experience definitions',      action:() => navigate('xd-registry') },
+      { icon:'✦',  label:'AI Studio',           sub:'Generate manifests via NL',   action:() => navigate('studio') },
+      { icon:'⚖',  label:'Rules Workbench',     sub:'Simulate rule evaluation',    action:() => navigate('rules-workbench') },
+      { icon:'▣',  label:'Preview Bench',       sub:'3-channel render preview',    action:() => navigate('preview') },
+      { icon:'🚀', label:'Publish Console',     sub:'Automated checks + promote',  action:() => navigate('publish-console') },
+      { icon:'⌘',  label:'MCP Gateway',         sub:'Test 7 MCP tool calls',       action:() => navigate('mcp') },
+      { icon:'📈', label:'Analytics',            sub:'Render telemetry',            action:() => navigate('analytics') },
+      { icon:'🛡',  label:'Governance',           sub:'Compliance rules',            action:() => navigate('governance') }
     ];
   } else {
     // Search skills
@@ -309,7 +375,7 @@ function updateCmdResults(q) {
       }
     });
     // Nav
-    [['Dashboard','dashboard'],['Skills','skills'],['AI Studio','studio'],['Preview Bench','preview'],['Analytics','analytics'],['MCP Gateway','mcp']].forEach(([l,v]) => {
+    [['Dashboard','dashboard'],['Skills','skills'],['AI Studio','studio'],['Rules Workbench','rules-workbench'],['Preview Bench','preview'],['Publish Console','publish-console'],['Analytics','analytics'],['MCP Gateway','mcp'],['Governance','governance'],['XD Registry','xd-registry']].forEach(([l,v]) => {
       if (l.toLowerCase().includes(lower)) {
         _cmdItems.push({ icon:'→', label:l, sub:'Navigate', action:() => navigate(v) });
       }
@@ -507,6 +573,62 @@ document.addEventListener('click', e => {
       break;
     }
 
+    case 'run-wb-sim': {
+      if (!S.wbContext) S.wbContext = { channel:'web', user_tier:'standard', locale:'en-US', device_width:1200 };
+      S.wbSimulated = true;
+      S.wbHiddenSlots = new Set();
+      navigate('rules-workbench');
+      showToast('✓ Simulation complete');
+      break;
+    }
+
+    case 'run-pub-checks': {
+      showToast('Running automated checks…');
+      setTimeout(() => {
+        S.pubChecks = validateXD(S.pubXD || 'loan-application-web');
+        navigate('publish-console');
+        const failed = S.pubChecks.filter(c => c.status === 'fail').length;
+        const warned = S.pubChecks.filter(c => c.status === 'warn').length;
+        if (failed) showToast(`${failed} check${failed>1?'s':''} failed — see details`, 'error');
+        else if (warned) showToast(`All passed with ${warned} warning${warned>1?'s':''}`, 'default');
+        else showToast('✓ All checks passed', 'success');
+      }, 1200);
+      break;
+    }
+
+    case 'promote-to-staging': {
+      showToast('Promoting to Staging…');
+      setTimeout(() => {
+        S.pubStage = 'staging';
+        const xd = MOCK.xds.find(x => x.xd_id === S.pubXD);
+        if (xd) xd.status = 'staging';
+        navigate('publish-console');
+        showToast('✓ Promoted to Staging successfully', 'success');
+      }, 900);
+      break;
+    }
+
+    case 'promote-to-production': {
+      showToast('Promoting to Production…');
+      setTimeout(() => {
+        S.pubStage = 'production';
+        const xd = MOCK.xds.find(x => x.xd_id === S.pubXD);
+        if (xd) xd.status = 'stable';
+        navigate('publish-console');
+        MOCK.notifications.unshift({ id:'n'+Date.now(), type:'deploy', title:`${xd?.name||'XD'} promoted to Production`, body:'0 tokens used · deterministic render confirmed', ts:'just now', read:false });
+        buildNotifPanel();
+        showToast('✓ Live on Production', 'success');
+      }, 1100);
+      break;
+    }
+
+    case 'open-publish-console': {
+      const skillToXD = MOCK.xds.find(x => x.implements_skill === d.id);
+      if (skillToXD) { S.pubXD = skillToXD.xd_id; S.pubChecks = []; S.pubStage = null; }
+      navigate('publish-console');
+      break;
+    }
+
     // Command palette results
     default:
       if (el.dataset.cmdIdx !== undefined) {
@@ -559,9 +681,12 @@ document.addEventListener('keydown', e => {
     }
   }
 
+  // Escape closes viewer too
+  if (e.key === 'Escape') { closeViewer(); return; }
+
   // Nav shortcuts
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
-  const shortcuts = { '1':'dashboard', '2':'skills', '3':'xd-registry', '4':'studio', '5':'preview', '6':'mcp', '7':'analytics' };
+  const shortcuts = { '1':'dashboard', '2':'skills', '3':'xd-registry', '4':'studio', '5':'rules-workbench', '6':'preview', '7':'publish-console', '8':'mcp', '9':'analytics' };
   if (shortcuts[e.key] && !e.metaKey && !e.ctrlKey) navigate(shortcuts[e.key]);
 });
 

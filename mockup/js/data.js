@@ -362,6 +362,64 @@ experience_definition:
         type: object
         required: [loanType, loanAmount, loanTerm]`;
 
+// ── Compliance Rules (spec §6.6) ──
+const COMPLIANCE_RULES = [
+  {
+    rule_id: 'pci-no-pan-web', name: 'No PAN in Web Forms',
+    regulation: 'PCI-DSS', enforcement: 'blocking',
+    description: 'XDs with PCI-DSS compliance tag must not expose full card number (PAN) as plaintext in web channel.',
+    applies_to: ['web','portal'],
+    skills_affected: ['make-payment']
+  },
+  {
+    rule_id: 'gdpr-pii-consent', name: 'GDPR PII Consent Required',
+    regulation: 'GDPR', enforcement: 'blocking',
+    description: 'Any XD collecting PII fields must include an explicit consent checkbox before data submission.',
+    applies_to: ['web','mobile','portal'],
+    skills_affected: ['verify-identity','open-account','apply-for-loan']
+  },
+  {
+    rule_id: 'psd2-2fa-high-value', name: 'PSD2 2FA for High-Value Transfers',
+    regulation: 'PSD2', enforcement: 'blocking',
+    description: 'Payment transactions exceeding $1,000 must trigger strong customer authentication before dispatch.',
+    applies_to: ['web','mobile','portal'],
+    skills_affected: ['make-payment']
+  },
+  {
+    rule_id: 'wcag-aa-contrast', name: 'WCAG 2.1 AA Contrast',
+    regulation: 'WCAG', enforcement: 'warning',
+    description: 'All metric display values must maintain a contrast ratio ≥ 4.5:1 against their background.',
+    applies_to: ['web','mobile'],
+    skills_affected: []
+  },
+  {
+    rule_id: 'data-residency-eu', name: 'EU Data Residency',
+    regulation: 'GDPR', enforcement: 'audit',
+    description: 'PII collected via en-GB locale must be stored in EU data centres. Logged for audit; does not block publish.',
+    applies_to: ['web','mobile','portal'],
+    skills_affected: ['verify-identity','apply-for-loan']
+  }
+];
+
+// ── Skill Version History ──
+const SKILL_VERSIONS = {
+  'apply-for-loan': [
+    { version:'2.1.0', date:'2026-06-01', author:'Taylor H.', note:'Added UK locale rule, extended max loan cap to $1M', status:'stable', breaking:false },
+    { version:'2.0.0', date:'2026-04-10', author:'Taylor H.', note:'BREAKING: renamed employment field, added GDPR consent checkbox', status:'stable', breaking:true },
+    { version:'1.3.2', date:'2026-02-22', author:'Jordan K.', note:'Perf: warm-path cache pre-load on org init', status:'deprecated', breaking:false },
+    { version:'1.3.0', date:'2025-12-15', author:'Jordan K.', note:'Added premium-user rule (extended loan cap)', status:'deprecated', breaking:false }
+  ],
+  'make-payment': [
+    { version:'3.0.1', date:'2026-05-28', author:'Sam L.', note:'Hotfix: PSD2 threshold corrected to $1,000', status:'stable', breaking:false },
+    { version:'3.0.0', date:'2026-05-01', author:'Sam L.', note:'BREAKING: migrated to sys:single-step-form@2.0', status:'stable', breaking:true },
+    { version:'2.1.0', date:'2025-11-20', author:'Sam L.', note:'Added mobile-compact rule for narrow screens', status:'deprecated', breaking:false }
+  ],
+  'verify-identity': [
+    { version:'1.0.3', date:'2026-05-14', author:'Jordan K.', note:'Hotfix: async upload path CORS headers', status:'stable', breaking:false },
+    { version:'1.0.0', date:'2026-01-20', author:'Jordan K.', note:'Initial release: KYC flow with biometric selfie', status:'stable', breaking:false }
+  ]
+};
+
 const MCP_TOOLS = {
   find_skill: {
     description: 'Discover skills by intent, domain, or channel. Returns ranked list with confidence scores.',
@@ -396,6 +454,33 @@ const MCP_TOOLS = {
     params: [
       { id:'org_id',   label:'org_id',   type:'text',   default:'acme-bank',      required:true },
       { id:'agent_id', label:'agent_id', type:'select', default:'lending-agent-v2',opts:['lending-agent-v2','onboarding-copilot','payments-bot'] }
+    ]
+  },
+  create_experience_definition: {
+    description: 'Create a new XD manifest for a skill — define slots, rules, channels, and actions. Returns draft XD ready for validation.',
+    params: [
+      { id:'org_id',      label:'org_id',      type:'text',   default:'acme-bank',               required:true },
+      { id:'skill_id',    label:'skill_id',    type:'text',   default:'apply-for-loan',           required:true },
+      { id:'xd_name',     label:'xd_name',     type:'text',   default:'Loan Application — Web',   required:true },
+      { id:'template_id', label:'template_id', type:'select', default:'sys:single-step-form',     opts:['sys:single-step-form','sys:multi-step-form','sys:metric-card','sys:confirmation','sys:calculator'] },
+      { id:'channels',    label:'channels',    type:'text',   default:'web,chatbot,copilot',      required:true }
+    ]
+  },
+  validate_experience_definition: {
+    description: 'Run the full automated validation suite on an XD — schema, template resolution, bind paths, WCAG, and compliance gate.',
+    params: [
+      { id:'org_id', label:'org_id', type:'text',   default:'acme-bank',            required:true },
+      { id:'xd_id',  label:'xd_id',  type:'text',   default:'loan-application-web', required:true },
+      { id:'strict', label:'strict', type:'select', default:'true',                 opts:['true','false'] }
+    ]
+  },
+  subscribe_to_actions: {
+    description: 'Subscribe to action dispatch events for a session via AG-UI SSE stream. Returns stream URL and initial state snapshot.',
+    params: [
+      { id:'org_id',     label:'org_id',     type:'text',   default:'acme-bank',            required:true },
+      { id:'session_id', label:'session_id', type:'text',   default:'sess_abc123',          required:true },
+      { id:'xd_id',      label:'xd_id',      type:'text',   default:'loan-application-web', required:true },
+      { id:'transport',  label:'transport',  type:'select', default:'sse',                  opts:['sse','websocket'] }
     ]
   }
 };
